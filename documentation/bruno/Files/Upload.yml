@@ -1,0 +1,27 @@
+info:
+  name: Upload
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{host}}/media_files"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - /private/var/folders/8m/1d062m0j01sg200wngqr1cm00000gn/T/TemporaryItems/com.apple.Photos.NSItemProvider/uuid=988AD991-C24F-4EC6-B8DB-95496836E5DB&code=001&library=1&type=1&mode=1&loc=true&cap=true.jpeg/IMG_2910.jpeg
+        contentType: image/jpeg
+      - name: uploader_id
+        type: text
+        value: "{{uploader_id}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

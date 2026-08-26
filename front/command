@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+set -eu
+mkdir -p log
+
+yarn dev 2>&1 | tee log/development.log

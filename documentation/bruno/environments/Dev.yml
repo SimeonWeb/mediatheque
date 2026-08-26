@@ -1,0 +1,8 @@
+name: Dev
+variables:
+  - name: host
+    value: http://localhost:8000/api
+  - name: uploader_id
+    value: 01a01c02-d8ba-76e6-834f-ed1068387019
+  - name: token
+    value: dev-token-change-me

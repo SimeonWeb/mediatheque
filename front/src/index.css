@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@theme {
+	--color-primary: #1d5a85;
+	--color-accent: #ffd403;
+
+	--text-2xs: .625rem;
+	--text-3xs: .5rem;
+
+	--em-spacing: 0.25em;
+
+	--drop-shadow-px: 0 1px 0 #fff;
+
+	--cursor-left: url(/assets/cursor-left.svg), pointer;
+	--cursor-right: url(/assets/cursor-right.svg), pointer;
+	--cursor-pointer: url(/assets/cursor-pointer.svg), pointer;
+}
+
+@custom-variant is-vertical {
+	@media (max-aspect-ratio: 2/3) {
+		@slot;
+	}
+}
+
+@custom-variant is-horizontal {
+	@media (min-aspect-ratio: 2/3) {
+		@slot;
+	}
+}
