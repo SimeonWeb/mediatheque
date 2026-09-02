@@ -3,6 +3,9 @@ import type { PropsWithClassName } from "react"
 
 import { cn } from "@/utils/cn"
 
+import { Button } from "./Button"
+import { WithIcon } from "./WithIcon"
+
 
 export type DialogProps = PropsWithClassName<{
 	id?: string
@@ -46,6 +49,15 @@ export const Dialog = ({ isOpen = true, close, children, containerClassName, cla
 					</DialogPanel>
 				</div>
 			</div>
+
+			<Button
+				onClick={close}
+				intent="text"
+				isNarrow
+				className="fixed right-4 top-4 text-white z-50"
+			>
+				<WithIcon before="x" className="sr-only">Fermer</WithIcon>
+			</Button>
 		</DialogBase>
 	)
 }

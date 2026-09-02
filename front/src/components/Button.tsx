@@ -44,9 +44,9 @@ const buttonVariants = cva(
 					"focus-visible:outline-primary/70",
 				],
 				secondary: [
-					"text-accent-1/80 hover:not-data-disabled:text-accent-1 data-open:text-accent-1",
-					"bg-primary-4/80 hover:not-data-disabled:bg-primary-4 data-open:bg-primary-4",
-					"focus-visible:outline-primary-4",
+					"text-neutral-800 hover:not-data-disabled:text-neutral-900 data-open:text-neutral-900",
+					"bg-neutral-200 hover:not-data-disabled:bg-neutral-300 data-open:bg-neutral-300",
+					"focus-visible:outline-neutral-400",
 				],
 				tertiary: [
 					"text-accent-1/80 hover:not-data-disabled:text-accent-1 data-open:text-accent-1",
@@ -70,9 +70,11 @@ const buttonVariants = cva(
 				],
 				text: [
 					"outline-offset-0",
-					"hover:not-data-disabled:bg-primary-3/70 data-open:bg-primary-3/70",
-					"focus-visible:outline-primary-4",
-					"in-[.bg-primary-3]:hover:not-data-disabled:bg-primary-4/80 in-[.bg-primary-3]:data-open:bg-primary-4/80",
+					"text-current",
+					"hover:not-data-disabled:text-neutral-900 data-open:text-neutral-900",
+					"focus-visible:text-neutral-900",
+					"hover:not-data-disabled:bg-neutral-100 data-open:bg-neutral-100",
+					"focus-visible:outline-neutral-400",
 				],
 			},
 			rounded: {
@@ -84,7 +86,7 @@ const buttonVariants = cva(
 			size: "base",
 			isNarrow: false,
 			intent: "secondary",
-			rounded: false,
+			rounded: true,
 		},
 	},
 )

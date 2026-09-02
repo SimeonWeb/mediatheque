@@ -6,6 +6,7 @@
 import type { Icons } from "./types/icons.ts"
 
 export const icons: Icons[] = [
+	"add",
 	"audio",
 	"check",
 	"chevron-down",
@@ -18,6 +19,7 @@ export const icons: Icons[] = [
 	"home",
 	"image",
 	"info",
+	"ink-pad",
 	"loader",
 	"user",
 	"video",

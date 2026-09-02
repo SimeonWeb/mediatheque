@@ -52,7 +52,7 @@ const listBoxButtonVariants = cva(
 			intent: {
 				default: [
 					"bg-white/60 backdrop-blur-md",
-					"text-neutral-600 placeholder:text-neutral-400 disabled:text-neutral-400 aria-readonly:text-neutral-600",
+					"text-neutral-900 placeholder:text-neutral-400 disabled:text-neutral-400 aria-readonly:text-neutral-900",
 					"outline-transparent data-focus:outline-primary",
 				],
 			},

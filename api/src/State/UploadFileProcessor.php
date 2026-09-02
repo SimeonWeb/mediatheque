@@ -7,32 +7,34 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Entity\MediaFile;
 use App\Enum\MediaType;
 use App\Repository\UploaderRepository;
+use App\Service\ChunkUploadManager;
 use App\Service\FileCreationDateExtractor;
 use App\Service\ImageVariantGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * @implements ProcessorInterface<mixed, MediaFile>
+ * @implements ProcessorInterface<mixed, MediaFile|Response>
  */
 final readonly class UploadFileProcessor implements ProcessorInterface
 {
-    private const int MAX_FILE_SIZE = 10 * 1024 * 1024;
-
     private const array ALLOWED_MIME_TYPES = [
         'application/pdf',
         'application/json',
-        'image/gif',
         'image/jpeg',
         'image/png',
         'image/webp',
@@ -56,15 +58,19 @@ final readonly class UploadFileProcessor implements ProcessorInterface
         private int $mediumSize,
         #[Autowire('%env(int:FULL_SIZE)%')]
         private int $fullSize,
+        #[Autowire('%env(int:MAX_FILE_SIZE)%')]
+        private int $maxFileSize,
         private EntityManagerInterface $entityManager,
         private Filesystem $filesystem,
         private UploaderRepository $uploaderRepository,
+        private AuthorizationCheckerInterface $authorizationChecker,
+        private ChunkUploadManager $chunkUploadManager,
         private FileCreationDateExtractor $fileCreationDateExtractor,
         private ImageVariantGenerator $imageVariantGenerator,
     ) {
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): MediaFile
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): MediaFile|Response
     {
         $request = $context['request'] ?? null;
         if (!$request instanceof Request) {
@@ -90,104 +96,167 @@ final readonly class UploadFileProcessor implements ProcessorInterface
             throw new BadRequestHttpException('Le fichier n’a pas pu être envoyé.');
         }
 
-        $size = $uploadedFile->getSize();
-        if (false === $size || $size > self::MAX_FILE_SIZE) {
-            throw new HttpException(Response::HTTP_CONTENT_TOO_LARGE, 'Le fichier ne doit pas dépasser 10 Mo.');
-        }
+        $completedUploadId = null;
+        $sourcePath = $uploadedFile->getPathname();
+        $clientOriginalName = $uploadedFile->getClientOriginalName();
+        $contentRange = $request->headers->get('Content-Range');
 
-        $mimeType = $uploadedFile->getMimeType() ?? 'application/octet-stream';
-        if (!in_array($mimeType, self::ALLOWED_MIME_TYPES, true)) {
-            throw new UnsupportedMediaTypeHttpException(sprintf('Le type de fichier "%s" n’est pas autorisé.', $mimeType));
-        }
+        if (is_string($contentRange) && '' !== trim($contentRange)) {
+            $uploadId = $request->request->get('upload_id');
+            if (!is_string($uploadId) || '' === trim($uploadId)) {
+                throw new BadRequestHttpException('Le champ "upload_id" est obligatoire pour un upload par chunks.');
+            }
 
-        $originalName = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-        if ('' === trim($originalName)) {
-            throw new UnprocessableEntityHttpException('Le nom du fichier est invalide.');
-        }
+            $chunkUpload = $this->chunkUploadManager->receive(
+                $uploadedFile,
+                trim($uploadId),
+                $uploaderId,
+                $contentRange,
+            );
 
-        if (mb_strlen($originalName) > 255) {
-            throw new UnprocessableEntityHttpException('Le nom du fichier est trop long.');
-        }
+            if (!$chunkUpload->isComplete()) {
+                return new JsonResponse([
+                    'uploadId' => $chunkUpload->uploadId,
+                    'received' => $chunkUpload->receivedBytes,
+                    'total' => $chunkUpload->totalBytes,
+                    'complete' => false,
+                ], Response::HTTP_ACCEPTED);
+            }
 
-        $uploadedAt = new \DateTimeImmutable();
-        $createdAt = $this->fileCreationDateExtractor->extract(
-            $uploadedFile->getPathname(),
-            $mimeType,
-            $uploadedAt,
-        ) ?? $uploadedAt;
-        $directory = $uploadedAt->format('Y/m');
-        $extension = $uploadedFile->guessExtension();
-        $storageName = Uuid::v7()->toRfc4122().($extension ? '.'.$extension : '');
-        $relativePath = $directory.'/'.$storageName;
-        $targetDirectory = rtrim($this->uploadDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$directory;
-        $absolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$storageName;
+            $completedUploadId = $chunkUpload->uploadId;
+            $sourcePath = $chunkUpload->assembledPath;
+            $clientOriginalName = $chunkUpload->originalName;
+        }
 
         try {
-            $this->filesystem->mkdir($targetDirectory);
-            $uploadedFile->move($targetDirectory, $storageName);
-        } catch (\Throwable $exception) {
-            throw new HttpException(Response::HTTP_INTERNAL_SERVER_ERROR, 'Le fichier n’a pas pu être enregistré.', $exception);
-        }
+            $sourceFile = new File($sourcePath);
+            $size = $sourceFile->getSize();
+            if (false === $size || $size > $this->maxFileSize) {
+                throw new HttpException(
+                    Response::HTTP_CONTENT_TOO_LARGE,
+                    sprintf('Le fichier ne doit pas dépasser %s.', $this->formatBytes($this->maxFileSize)),
+                );
+            }
 
-        $thumbnailRelativePath = null;
-        $thumbnailAbsolutePath = null;
-        $fullRelativePath = null;
-        $fullAbsolutePath = null;
-        $mediumRelativePath = null;
-        $mediumAbsolutePath = null;
+            $mimeType = $sourceFile->getMimeType() ?? 'application/octet-stream';
+            if (!in_array($mimeType, self::ALLOWED_MIME_TYPES, true)) {
+                throw new UnsupportedMediaTypeHttpException(sprintf('Le type de fichier "%s" n’est pas autorisé.', $mimeType));
+            }
 
-        if (str_starts_with($mimeType, 'image/')) {
-            $baseName = pathinfo($storageName, PATHINFO_FILENAME);
-            $thumbnailName = sprintf(
-                '%s-%d.jpg',
-                $baseName,
-                max(1, $this->thumbnailSize),
-            );
-            $thumbnailRelativePath = $directory.'/'.$thumbnailName;
-            $thumbnailAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$thumbnailName;
-            $fullName = sprintf('%s-%d.jpg', $baseName, max(1, $this->fullSize));
-            $fullRelativePath = $directory.'/'.$fullName;
-            $fullAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$fullName;
-            $mediumName = sprintf('%s-%d.jpg', $baseName, max(1, $this->mediumSize));
-            $mediumRelativePath = $directory.'/'.$mediumName;
-            $mediumAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$mediumName;
+            $mediaType = MediaType::fromMimeType($mimeType);
+            if (
+                !$this->authorizationChecker->isGranted('ROLE_UPLOAD_ALL')
+                && !in_array($mediaType, [MediaType::Image, MediaType::Video], true)
+            ) {
+                throw new AccessDeniedHttpException('Ce token permet uniquement l’upload d’images et de vidéos.');
+            }
+
+            $originalName = pathinfo($clientOriginalName, PATHINFO_FILENAME);
+            if ('' === trim($originalName)) {
+                throw new UnprocessableEntityHttpException('Le nom du fichier est invalide.');
+            }
+
+            if (mb_strlen($originalName) > 255) {
+                throw new UnprocessableEntityHttpException('Le nom du fichier est trop long.');
+            }
+
+            $uploadedAt = new \DateTimeImmutable();
+            $createdAt = $this->fileCreationDateExtractor->extract(
+                $sourcePath,
+                $mimeType,
+                $uploadedAt,
+            ) ?? $uploadedAt;
+            $directory = $uploadedAt->format('Y/m');
+            $extension = $sourceFile->guessExtension();
+            $storageName = Uuid::v7()->toRfc4122().($extension ? '.'.$extension : '');
+            $relativePath = $directory.'/'.$storageName;
+            $targetDirectory = rtrim($this->uploadDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$directory;
+            $absolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$storageName;
 
             try {
-                $this->imageVariantGenerator->generate($absolutePath, $thumbnailAbsolutePath, $this->thumbnailSize);
-                $this->imageVariantGenerator->generate($absolutePath, $mediumAbsolutePath, $this->mediumSize);
-                $this->imageVariantGenerator->generate($absolutePath, $fullAbsolutePath, $this->fullSize);
+                $this->filesystem->mkdir($targetDirectory);
+                if (null === $completedUploadId) {
+                    $uploadedFile->move($targetDirectory, $storageName);
+                } else {
+                    $this->filesystem->rename($sourcePath, $absolutePath);
+                }
             } catch (\Throwable $exception) {
-                $this->filesystem->remove([$absolutePath, $thumbnailAbsolutePath, $mediumAbsolutePath, $fullAbsolutePath]);
+                throw new HttpException(Response::HTTP_INTERNAL_SERVER_ERROR, 'Le fichier n’a pas pu être enregistré.', $exception);
+            }
 
-                throw new UnprocessableEntityHttpException('Les variantes de l’image n’ont pas pu être générées.', $exception);
+            $thumbnailRelativePath = null;
+            $thumbnailAbsolutePath = null;
+            $fullRelativePath = null;
+            $fullAbsolutePath = null;
+            $mediumRelativePath = null;
+            $mediumAbsolutePath = null;
+
+            if (str_starts_with($mimeType, 'image/')) {
+                $baseName = pathinfo($storageName, PATHINFO_FILENAME);
+                $thumbnailName = sprintf(
+                    '%s-%d.jpg',
+                    $baseName,
+                    max(1, $this->thumbnailSize),
+                );
+                $thumbnailRelativePath = $directory.'/'.$thumbnailName;
+                $thumbnailAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$thumbnailName;
+                $fullName = sprintf('%s-%d.jpg', $baseName, max(1, $this->fullSize));
+                $fullRelativePath = $directory.'/'.$fullName;
+                $fullAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$fullName;
+                $mediumName = sprintf('%s-%d.jpg', $baseName, max(1, $this->mediumSize));
+                $mediumRelativePath = $directory.'/'.$mediumName;
+                $mediumAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$mediumName;
+
+                try {
+                    $this->imageVariantGenerator->generate($absolutePath, $thumbnailAbsolutePath, $this->thumbnailSize);
+                    $this->imageVariantGenerator->generate($absolutePath, $mediumAbsolutePath, $this->mediumSize);
+                    $this->imageVariantGenerator->generate($absolutePath, $fullAbsolutePath, $this->fullSize);
+                } catch (\Throwable $exception) {
+                    $this->filesystem->remove([$absolutePath, $thumbnailAbsolutePath, $mediumAbsolutePath, $fullAbsolutePath]);
+
+                    throw new UnprocessableEntityHttpException('Les variantes de l’image n’ont pas pu être générées.', $exception);
+                }
+            }
+
+            $mediaFile = new MediaFile(
+                $originalName,
+                $storageName,
+                $relativePath,
+                $mimeType,
+                $mediaType,
+                $extension,
+                $size,
+                $uploader,
+                $thumbnailRelativePath,
+                $fullRelativePath,
+                $mediumRelativePath,
+                $createdAt,
+                $uploadedAt,
+            );
+
+            try {
+                $this->entityManager->persist($mediaFile);
+                $this->entityManager->flush();
+            } catch (\Throwable $exception) {
+                $this->filesystem->remove(array_filter([$absolutePath, $thumbnailAbsolutePath, $mediumAbsolutePath, $fullAbsolutePath]));
+
+                throw new HttpException(Response::HTTP_INTERNAL_SERVER_ERROR, 'Les métadonnées n’ont pas pu être enregistrées.', $exception);
+            }
+
+            return $mediaFile;
+        } finally {
+            if (null !== $completedUploadId) {
+                $this->chunkUploadManager->discard($completedUploadId);
             }
         }
+    }
 
-        $mediaFile = new MediaFile(
-            $originalName,
-            $storageName,
-            $relativePath,
-            $mimeType,
-            MediaType::fromMimeType($mimeType),
-            $extension,
-            $size,
-            $uploader,
-            $thumbnailRelativePath,
-            $fullRelativePath,
-            $mediumRelativePath,
-            $createdAt,
-            $uploadedAt,
-        );
-
-        try {
-            $this->entityManager->persist($mediaFile);
-            $this->entityManager->flush();
-        } catch (\Throwable $exception) {
-            $this->filesystem->remove(array_filter([$absolutePath, $thumbnailAbsolutePath, $mediumAbsolutePath, $fullAbsolutePath]));
-
-            throw new HttpException(Response::HTTP_INTERNAL_SERVER_ERROR, 'Les métadonnées n’ont pas pu être enregistrées.', $exception);
+    private function formatBytes(int $bytes): string
+    {
+        if (0 === $bytes % (1024 * 1024 * 1024)) {
+            return ($bytes / (1024 * 1024 * 1024)).' Go';
         }
 
-        return $mediaFile;
+        return (int) ceil($bytes / (1024 * 1024)).' Mo';
     }
 }

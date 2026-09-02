@@ -19,7 +19,11 @@ final class UploadTokenAuthenticator extends AbstractAuthenticator
 {
     public function __construct(
         #[Autowire('%env(UPLOAD_BEARER_TOKEN)%')]
-        private readonly string $expectedToken,
+        private readonly string $uploadToken,
+        #[Autowire('%env(UPLOAD_ALL_BEARER_TOKEN)%')]
+        private readonly string $uploadAllToken,
+        #[Autowire('%env(READ_BEARER_TOKEN)%')]
+        private readonly string $readToken,
     ) {
     }
 
@@ -40,14 +44,17 @@ final class UploadTokenAuthenticator extends AbstractAuthenticator
         }
 
         $providedToken = $matches[1];
-        if ('' === $this->expectedToken || !hash_equals($this->expectedToken, $providedToken)) {
+        $identity = $this->resolveIdentity($providedToken);
+        if (null === $identity) {
             throw new CustomUserMessageAuthenticationException('Token d’accès invalide.');
         }
 
+        [$identifier, $roles] = $identity;
+
         return new SelfValidatingPassport(
             new UserBadge(
-                'upload-token',
-                static fn (): InMemoryUser => new InMemoryUser('upload-token', null, ['ROLE_UPLOADER']),
+                $identifier,
+                static fn (): InMemoryUser => new InMemoryUser($identifier, null, $roles),
             ),
         );
     }
@@ -66,5 +73,25 @@ final class UploadTokenAuthenticator extends AbstractAuthenticator
             ['error' => 'Token d’accès invalide.'],
             Response::HTTP_UNAUTHORIZED,
         );
+    }
+
+    /**
+     * @return array{string, list<string>}|null
+     */
+    private function resolveIdentity(string $providedToken): ?array
+    {
+        $tokens = [
+            [$this->uploadAllToken, 'upload-all-token', ['ROLE_UPLOAD_ALL']],
+            [$this->uploadToken, 'upload-token', ['ROLE_UPLOADER']],
+            [$this->readToken, 'read-token', ['ROLE_READER']],
+        ];
+
+        foreach ($tokens as [$expectedToken, $identifier, $roles]) {
+            if ('' !== $expectedToken && hash_equals($expectedToken, $providedToken)) {
+                return [$identifier, $roles];
+            }
+        }
+
+        return null;
     }
 }

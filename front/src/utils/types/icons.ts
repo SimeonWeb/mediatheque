@@ -4,6 +4,7 @@
  */
 
 export type Icons = (
+	| "add"
 	| "audio"
 	| "check"
 	| "chevron-down"
@@ -16,6 +17,7 @@ export type Icons = (
 	| "home"
 	| "image"
 	| "info"
+	| "ink-pad"
 	| "loader"
 	| "user"
 	| "video"

@@ -10,15 +10,11 @@ const cardVariants = cva(
 	[
 		"Card",
 		"flex flex-wrap flex-col gap-px",
-		"rounded-xl",
-		"ring",
-		"overflow-hidden",
 	],
 	{
 		variants: {
 			isOutlined: {
-				true: "CardOutlined ring-primary-4",
-				false: "ring-primary-1",
+				true: "CardOutlined",
 			},
 		},
 		defaultVariants: {
@@ -32,7 +28,8 @@ export type CardVariants = VariantProps<typeof cardVariants>
 const cardItemVariants = cva(
 	[
 		"CardItem",
-		"ring ring-primary-1 in-[.CardOutlined]:ring-primary-4",
+		"ring ring-white in-[.CardOutlined]:ring-neutral-200",
+		"first:rounded-t-xl last:rounded-b-xl",
 	],
 	{
 		variants: {
@@ -67,17 +64,19 @@ const cardInteractiveItemVariants = cva(
 	[
 		"group",
 		"text-left",
-		"outline-0!",
 		"transition-colors",
+		"outline-2 outline-transparent",
 		"not-aria-disabled:cursor-pointer",
+		"in-[.CardOutlined]:focus-visible:bg-white",
+		"in-[.CardOutlined]:has-focus-visible:bg-white",
 	],
 	{
 		variants: {
 			intent: {
 				default: [
-					"focus-visible:bg-primary-4 in-[.CardOutlined]:focus-visible:bg-primary-3",
-					"has-focus-visible:bg-primary-4 in-[.CardOutlined]:has-focus-visible:bg-primary-3",
-					"hover:not-aria-disabled:bg-primary-4 in-[.CardOutlined]:hover:not-aria-disabled:bg-primary-3",
+					"focus-visible:bg-neutral-200 in-[.CardOutlined]:focus-visible:outline-neutral-400",
+					"has-focus-visible:bg-neutral-200 in-[.CardOutlined]:has-focus-visible:outline-neutral-400",
+					"hover:not-aria-disabled:bg-neutral-300 in-[.CardOutlined]:hover:not-aria-disabled:bg-neutral-200",
 				],
 				error: [
 					"focus-visible:bg-error-support-highlight in-[.CardOutlined]:focus-visible:bg-error-support-highlight",

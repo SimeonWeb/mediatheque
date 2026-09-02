@@ -16,11 +16,9 @@ export const router = createRouter({
 	scrollRestoration: true,
 })
 
-export type AppRouter = typeof router
-
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
 	interface Register {
-		router: AppRouter
+		router: typeof router
 	}
 }

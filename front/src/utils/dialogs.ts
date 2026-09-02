@@ -3,9 +3,7 @@ import type { ReactNode } from "react"
 
 import { AsyncConfirm, type AsyncConfirmProps, Confirm, type ConfirmProps, Dialog, type DialogProps, Preview, type PreviewProps } from "@/layouts/Dialogs"
 import { type DialogEvents, useDialog } from "@/stores/dialog"
-// import { Drawer, type DrawerProps } from "@/components/Drawer"
-
-// import { cn } from "./cn"
+import { Drawer, type DrawerProps } from "@/components/Drawer"
 
 export const openDialog = (
 	title: ReactNode,
@@ -79,21 +77,20 @@ export const openPreview = (
 	)
 }
 
-// export const openDrawer = (
-// 	children?: DrawerProps["children"],
-// 	props?: Omit<DrawerProps, "children" | "isOpen" | "close">,
-// 	events?: DialogEvents
-// ) => {
-// 	useDialog.getState().open(
-// 		Drawer,
-// 		{
-// 			children,
-// 			...props,
-// 			className: cn("md:w-[calc(var(--sidebar-width)*1.5+var(--spacing)*3)]", props?.className),
-// 		},
-// 		events
-// 	)
-// }
+export const openDrawer = (
+	children?: DrawerProps["children"],
+	props?: Omit<DrawerProps, "children" | "isOpen" | "close">,
+	events?: DialogEvents
+) => {
+	useDialog.getState().open(
+		Drawer,
+		{
+			children,
+			...props,
+		},
+		events
+	)
+}
 
 // export const openDrawerInfo = (
 // 	children?: DrawerProps["children"],
@@ -105,7 +102,6 @@ export const openPreview = (
 // 		{
 // 			children,
 // 			...props,
-// 			className: cn("md:w-(--sidebar-width)", props?.className),
 // 		},
 // 		events
 // 	)

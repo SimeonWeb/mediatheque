@@ -1,40 +1,53 @@
 import type { ComponentPropsWithRef } from "react"
 
-import type { MediaFile } from "@/features/mediaFile/api/types"
+import type { PreviewProps } from "@/layouts/Dialogs"
 import { cn } from "@/utils/cn"
 import { openPreview } from "@/utils/dialogs"
 
-import { MediaGridImage, MediaGridItem } from "./MediaGridItem"
-import type { PreviewProps } from "@/layouts/Dialogs"
+import { MediaGridItem, type MediaGridItemProps } from "./MediaGridItem"
+import { defaultItemsPerPage } from "@/utils/pagination"
+
+export type MediaGridContainerProps = ComponentPropsWithRef<"div">
+
+export const MediaGridContainer = ({ ref, children, className, ...props }: MediaGridContainerProps) => (
+	<div
+		ref={ref}
+		className={cn(
+			"grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 gap-1 is-horizontal:gap-1.5",
+			className
+		)}
+		{...props}
+	>
+		{children}
+	</div>
+)
 
 export type MediaGridProps = ComponentPropsWithRef<"div"> & {
-	items?: MediaFile[]
+	items?: MediaGridItemProps[]
 	onItem?: PreviewProps["onItem"]
 }
 
-export const MediaGrid = ({ ref, items = [], onItem }: MediaGridProps) => {
-	console.log("MediaGrid items", items.length)
+export const MediaGrid = ({ items = [], onItem, ...props }: MediaGridProps) => {
 	return (
-		<div
-			ref={ref}
-			className={cn(
-				"grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 is-horizontal:gap-1.5",
-				"p-1 is-horizontal:p-[2.5vw] is-horizontal:pl-0"
-			)}
-		>
+		<MediaGridContainer {...props}>
 			{items.map((item, index) => (
 				<button
 					key={item.id}
 					onClick={() => openPreview(index, { onItem })}
 					aria-label="Visualiser le document"
-					className="cursor-pointer"
+					className={cn(
+						"cursor-pointer w-full aspect-square rounded-sm sm:rounded-md",
+						"outline-2 sm:outline-offset-2 outline-transparent focus-visible:outline-primary",
+						"translate-0 starting:opacity-0 starting:translate-y-4",
+						"transition duration-500"
+					)}
+					style={{
+						transitionDelay: `${15 * (index % defaultItemsPerPage)}ms`,
+					}}
 				>
-					{item.mimeType.startsWith("image/")
-						? <MediaGridImage {...item} index={index} />
-						: <MediaGridItem {...item} index={index} />
-					}
+					<MediaGridItem {...item} />
 				</button>
 			))}
-		</div>
+		</MediaGridContainer>
 	)
 }

@@ -5,22 +5,50 @@ import { cn } from "@/utils/cn"
 
 const wrapperVariants = cva(
 	[
-		"p-5 gap-5",
-		"md:p-6 md:gap-6",
+		"Wrapper",
 	],
 	{
 		variants: {
 			isIso: {
 				true: "",
-				false: "py-2.5 md:py-3",
+				false: "",
+			},
+			size: {
+				base: "p-4 gap-4",
+				lg: "p-6 gap-6",
+				xl: "p-8 gap-8",
+				"2xl": "p-12 gap-12",
 			},
 			direction: {
 				vertical: "px-0 md:px-0",
 				horizontal: "py-0 md:py-0",
 			},
 		},
+		compoundVariants: [
+			{
+				isIso: false,
+				size: "base",
+				className: "py-3 gap-3",
+			},
+			{
+				isIso: false,
+				size: "lg",
+				className: "py-4.5 gap-4.5",
+			},
+			{
+				isIso: false,
+				size: "xl",
+				className: "py-6 gap-6",
+			},
+			{
+				isIso: false,
+				size: "2xl",
+				className: "py-9 gap-9",
+			},
+		],
 		defaultVariants: {
 			isIso: false,
+			size: "base",
 		},
 	},
 )
@@ -40,6 +68,7 @@ export type WrapperProps<TElement extends ElementType = "div"> = (
 export const Wrapper = <TElement extends ElementType = "div">({
 	as,
 	isIso,
+	size,
 	direction,
 	className,
 	...props
@@ -49,7 +78,7 @@ export const Wrapper = <TElement extends ElementType = "div">({
 	return (
 		<Tag
 			{...props}
-			className={cn(wrapperVariants({ isIso, direction }), className)}
+			className={cn(wrapperVariants({ isIso, size, direction }), className)}
 		/>
 	)
 }

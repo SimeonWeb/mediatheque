@@ -14,19 +14,18 @@ const alertVariants = cva(
 		"md:px-6 md:py-4",
 		"rounded-xl",
 		"leading-tight",
-		"ring-1 ring-primary-1",
 	],
 	{
 		variants: {
 			intent: {
 				error: [
-					"bg-error-support text-neutral-highlight [&_.AlertIcon]:text-error",
+					"bg-error-support text-black/80 [&_.Heading]:text-error [&_.AlertIcon]:text-error",
 				],
 				warning: [
-					"bg-warning-support text-neutral-highlight [&_.AlertIcon]:text-warning",
+					"bg-warning-support text-black/80 [&_.Heading]:text-warning [&_.AlertIcon]:text-warning",
 				],
 				info: [
-					"bg-info-support text-neutral-highlight [&_.AlertIcon]:text-info",
+					"bg-info-support text-black/80 [&_.Heading]:text-info [&_.AlertIcon]:text-info",
 				],
 			},
 		},

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import { useIntersectionObserver } from "usehooks-ts"
-import { useParams } from "@tanstack/react-router"
 
 import { Listbox } from "@/components/Listbox"
 import { Loader } from "@/components/Loader"
@@ -10,8 +10,9 @@ import { WithIcon } from "@/components/WithIcon"
 import { cn } from "@/utils/cn"
 import { defaultItemsPerPage } from "@/utils/pagination"
 import { getMediaFiles } from "@/features/mediaFile/api/fetch"
+import { toMediaGridItem } from "@/features/mediaFile/utils/helpers"
 import { uploadersQueryOptions } from "@/features/uploader/api/options"
-import { useMediaFilesContext } from "@/features/mediaFile/utils/useMediaFiles"
+import { useFiles } from "@/features/mediaFile/utils/store"
 
 import { getMediaTypeDefautLabel } from "../utils/labels"
 
@@ -20,11 +21,16 @@ export const MediaTypeComponent = () => {
 		from: "/$mediaType",
 		select: params => params.mediaType,
 	})
+	const uploader = useSearch({
+		from: "/$mediaType",
+		select: params => params.uploader,
+	})
+	const navigate = useNavigate({ from: "/$mediaType" })
+
 	const { isIntersecting, ref } = useIntersectionObserver({
 		threshold: 0.25,
 	})
 
-	const [uploader, setUploader] = useState<string | undefined>()
 	const [isOnLastItem, setIsOnLastItem] = useState<boolean>(false)
 
 	const {
@@ -69,17 +75,15 @@ export const MediaTypeComponent = () => {
 		[isLoading, isOnLastItem, isIntersecting, hasNextPage, isFetching, fetchNextPage]
 	)
 
-	const { setFiles } = useMediaFilesContext()
-
 	const items = useMemo(
 		() => {
-			const items = data?.pages.flatMap(page => page.items)
+			const items = data?.pages.flatMap(page => page.items) || []
 
-			setFiles(items || [])
+			useFiles.setState({ items })
 
-			return items
+			return items.map(toMediaGridItem)
 		},
-		[data, setFiles]
+		[data]
 	)
 
 	if (isLoading || isLoadingUploaders) {
@@ -91,6 +95,7 @@ export const MediaTypeComponent = () => {
 	return (
 		<>
 			<MediaGrid
+				className="p-1 is-horizontal:p-[2.5vw] is-horizontal:pl-0"
 				items={items}
 				onItem={(_, __, isLast) => setIsOnLastItem(isLast)}
 			/>
@@ -98,30 +103,46 @@ export const MediaTypeComponent = () => {
 				ref={ref}
 				className="h-screen mt-[-100vh] pointer-events-none"
 			/>
-			<Listbox
-				containerClassName={cn(
-					"fixed bottom-20 is-vertical:inset-x-4 w-auto z-50 is-horizontal:bottom-[2.5vw] is-horizontal:right-[calc(2.5vw+var(--spacing)*4)] is-horizontal:w-80",
-					"starting:opacity-0 starting:translate-y-4 transition duration-800 delay-800"
+			<div
+				className={cn(
+					"fixed bottom-20 is-vertical:inset-x-4 is-horizontal:bottom-[3.5vw] is-horizontal:right-[3.5vw] ",
+					"w-auto z-30"
 				)}
-				options={[
-					{
-						value: "",
-						label: defaultLabel,
-					},
-					...dataUploaders!.items.flatMap(({ name, slug, total }) => (
-						total > 0
-							? [{
-								value: slug,
-								label: <WithIcon before="user" containerClassName="justify-start">{name}</WithIcon>,
-							}]
-							: []
-					)),
-				]}
-				onSelected={option => setUploader(option?.value || undefined)}
-				value={uploader}
-				placeholder={defaultLabel}
-				isClearable
-			/>
+			>
+				<Listbox
+					containerClassName={cn(
+						"starting:opacity-0 starting:translate-y-4 transition duration-800 delay-800"
+					)}
+					options={[
+						{
+							value: "",
+							label: defaultLabel,
+						},
+						...dataUploaders!.items.flatMap(({ name, slug, total }) => (
+							total > 0
+								? [{
+									value: slug,
+									label: <WithIcon before="user" containerClassName="justify-start">{name}</WithIcon>,
+								}]
+								: []
+						)),
+					]}
+					onSelected={option => {
+						navigate({
+							to: ".",
+							params: {
+								mediaType: type,
+							},
+							search: {
+								uploader: option?.value || undefined,
+							},
+						})
+					}}
+					value={uploader}
+					placeholder={defaultLabel}
+					isClearable
+				/>
+			</div>
 		</>
 	)
 }

@@ -1,44 +1,59 @@
+import { createJSONStorage, persist, subscribeWithSelector } from "zustand/middleware"
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+
+import type { Role } from "@/features/role/api/enums"
+import { queryClient } from "@/utils/queryClient"
+import { roleQueryOptions } from "@/features/role/api/options"
 
 export type AuthState = {
 	token: string | null
+	role: Role | null
 }
 
 export type AuthActions = {
-	hasToken: () => boolean
-	setToken: (token: string | null) => void
+	init: () => Promise<void>
+	canUpload: (all?: boolean) => boolean
 }
 
 export const useAuth = create<AuthState & AuthActions>()(
 	persist(
-		(set, get) => ({
-			token: localStorage.getItem("token"),
-			hasToken: () => {
-				const params = new URLSearchParams(window.location.search)
+		subscribeWithSelector(
+			(set, get) => ({
+				token: null,
+				role: null,
+				init: async () => {
+					const params = new URLSearchParams(window.location.search)
+					const token = params.get("token") || get().token
 
-				if (params.has("token")) {
-					get().setToken(params.get("token"))
-					return true
-				}
+					if (token) {
+						set({ token })
 
-				return !!get().token
-			},
-			setToken: token => {
-				if (token) {
-					set({ token })
+						const data = await queryClient.fetchQuery(roleQueryOptions())
 
-					return
-				}
+						if (data.role) {
+							set({ role: data.role })
 
-				set({ token: null })
-			},
-		}),
+							return
+						}
+
+						set({ token: null, role: null })
+					}
+				},
+				canUpload: all => {
+					if (all && get().role === "UPLOAD_ALL") {
+						return true
+					}
+
+					return get().role === "UPLOAD"
+				},
+			}),
+		),
 		{
 			name: "auth",
 			partialize: state => ({
 				token: state.token,
 			}),
+			storage: createJSONStorage(() => sessionStorage),
 		}
 	),
 )

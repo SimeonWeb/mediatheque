@@ -5,6 +5,7 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use App\Dto\CreateUploaderInput;
+use App\Exception\UploaderAlreadyExistsException;
 use App\Repository\UploaderRepository;
 use App\State\CreateUploaderProcessor;
 use Doctrine\ORM\Mapping as ORM;
@@ -22,6 +23,7 @@ use Symfony\Component\Uid\Uuid;
                 'json' => ['application/json'],
             ],
             normalizationContext: ['groups' => ['uploader:create:read']],
+            errors: [UploaderAlreadyExistsException::class],
         ),
     ],
 )]

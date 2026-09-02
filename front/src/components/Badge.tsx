@@ -90,7 +90,10 @@ const badgeVariants = cva(
 					"group-hover/interactive:bg-info-support-highlight",
 				],
 				neutral: [
-					"bg-neutral text-white dark:text-black/80",
+					"bg-neutral-200 text-neutral-900",
+				],
+				dark: [
+					"bg-neutral-800 text-neutral-100",
 				],
 			},
 			outlined: {

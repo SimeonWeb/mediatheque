@@ -9,6 +9,7 @@
 parameters:
     app.default_upload_dir: '%kernel.project_dir%/var/uploads'
     app.upload_dir: '%env(default:app.default_upload_dir:UPLOAD_DIR)%'
+    app.upload_chunk_dir: '%kernel.project_dir%/var/upload_chunks'
 
 services:
     # default configuration for services in *this* file

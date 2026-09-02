@@ -7,6 +7,10 @@ security:
     providers:
         users_in_memory: { memory: null }
 
+    role_hierarchy:
+        ROLE_UPLOADER: ROLE_READER
+        ROLE_UPLOAD_ALL: ROLE_UPLOADER
+
     firewalls:
         dev:
             # Ensure dev tools and static assets are always allowed
@@ -28,7 +32,8 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: '^/api(?:/|$)', roles: PUBLIC_ACCESS, methods: [OPTIONS] }
-        - { path: '^/api(?:/|$)', roles: ROLE_UPLOADER }
+        - { path: '^/api(?:/|$)', roles: ROLE_UPLOADER, methods: [POST] }
+        - { path: '^/api(?:/|$)', roles: ROLE_READER }
 
 when@test:
     security:

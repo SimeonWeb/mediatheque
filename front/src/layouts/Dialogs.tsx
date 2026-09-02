@@ -15,9 +15,11 @@ import type { MediaFile } from "@/features/mediaFile/api/types"
 import { WithIcon } from "@/components/WithIcon"
 import { WithLoading } from "@/components/WithLoading"
 import { cn } from "@/utils/cn"
+import { displayDateTime } from "@/utils/date"
 import { getFileUrl } from "@/utils/file"
+import { getTypeFromMime } from "@/features/mediaFile/utils/helpers"
 import { sleep } from "@/utils/sleep"
-import { useMediaFilesContext } from "@/features/mediaFile/utils/useMediaFiles"
+import { useFiles } from "@/features/mediaFile/utils/store"
 
 export interface DialogProps extends DialogBaseProps {
 	title: ReactNode
@@ -236,7 +238,7 @@ export interface PreviewProps extends DialogBaseProps {
 }
 
 export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
-	const { files } = useMediaFilesContext()
+	const files = useFiles(state => state.items)
 
 	const [currentIndex, setCurrentIndex] = useState(index)
 
@@ -245,6 +247,8 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 		originalName,
 		mimeType,
 		extension,
+		createdAt,
+		uploader,
 	} = files[currentIndex]
 
 	useEffect(
@@ -288,35 +292,45 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 		[currentIndex]
 	)
 
+	const type = getTypeFromMime(mimeType)
+
 	return (
 		<DialogBase {...props} className={cn("max-w-none w-full", props.className)}>
-			<DialogTitle as={Group} className="flex-col items-center justify-center">
-				<button
-					type="button"
-					className="flex focusable rounded cursor-pointer max-w-[calc(95vw)] max-h-[calc(100vh-5vw)]"
-					onClick={props.close}
-					aria-label={defaultCloseLabel}
+			<DialogTitle as={Group} size="xl" className="flex-col items-center justify-center">
+				<div
+					className="flex rounded max-w-[calc(95vw)] max-h-[calc(100vh-5vw)]"
 				>
-					{mimeType.startsWith("image/")
+					{type === "image"
 						? (
 							<img
 								src={getFileUrl(paths.medium)}
 								srcSet={`${getFileUrl(paths.medium)} 1080w, ${getFileUrl(paths.full)} 1920w`}
 								alt={originalName}
-								className="w-full h-full object-contain rounded"
+								className="max-w-full max-h-full object-contain rounded"
 							/>
 						)
-						: (
-							<div className="flex flex-col gap-4 items-center justify-center text-primary">
-								<div className="size-20 grid col-span-1 row-span-1 justify-center items-center">
-									<Icon name="document" className="col-start-1 row-start-1 size-full" />
-									<span className="col-start-1 row-start-1 text-white/80 text-base pt-5 uppercase">{extension}</span>
+						: type === "video"
+							? (
+								<video
+									src={getFileUrl(paths.full)}
+									className="max-w-full max-h-full object-contain rounded"
+									controls
+								>
+									{originalName}
+								</video>
+							)
+							: (
+								<div className="flex flex-col gap-4 items-center justify-center text-primary text-center">
+									<div className="size-20 grid col-span-1 row-span-1 justify-center items-center">
+										<Icon name="document" className="col-start-1 row-start-1 size-full" />
+										<span className="col-start-1 row-start-1 text-white/80 text-base pt-5 uppercase">{extension}</span>
+									</div>
+									<Badge>{originalName}</Badge>
 								</div>
-								<Badge>{originalName}</Badge>
-							</div>
-						)
+							)
 					}
-				</button>
+				</div>
+				<Badge intent="dark">{uploader.name} • {displayDateTime(createdAt)}</Badge>
 			</DialogTitle>
 			{currentIndex > -1 && !!files && (
 				<>

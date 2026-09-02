@@ -3,67 +3,27 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 
 import { Icon } from "@/components/Icon"
 import type { Icons } from "@/utils/types/icons"
+import { MediaFilesFormDrawer } from "@/features/mediaFile/components/MediaFilesFormDrawer"
 import { cn } from "@/utils/cn"
 import { getMediaTypeLabel } from "@/features/mediaType/utils/labels"
 import { mediaTypesQueryOptions } from "@/features/mediaType/api/options"
+import { openDrawer } from "@/utils/dialogs"
+
+import { Header } from "./Header"
+import { useAuth } from "@/stores/auth"
 
 export const Navbar = () => {
 	const { data } = useSuspenseQuery(mediaTypesQueryOptions())
+	const canUpload = useAuth(state => state.canUpload)
 
 	return (
-		<header
-			className={cn(
-				"fixed bottom-0 left-0 is-horizontal:top-0",
-				"is-vertical:flex",
-				"h-16 w-full is-horizontal:h-full is-horizontal:w-16 lg:is-horizontal:w-[6vw]",
-				"is-vertical:gap-2 is-vertical:px-4 is-horizontal:pt-[1vw]",
-				"z-50"
-			)}
-		>
-			<hgroup
-				className={cn(
-					"absolute bottom-[3vw] left-0 h-16 lg:h-[6vw]",
-					"flex items-center",
-					"rotate-270 origin-bottom-left translate-x-16 lg:translate-x-[6vw]",
-					"starting:translate-y-4 starting:opacity-0 transition duration-800 delay-300",
-					"is-vertical:hidden"
-				)}
-			>
-				<Link
-					to="/"
-					className="flex justify-between w-58 lg:w-[22vw] cursor-pointer"
-				>
-					<h1 className="w-[55%]">
-						<img src="/assets/mariesimon.svg" className="block w-full" alt="Marie • Simon" />
-					</h1>
-					<img src="/assets/date.svg" className="block w-1/3" alt="11.07.2026" />
-				</Link>
-			</hgroup>
-
-			<Link
-				to="/"
-				className={cn(
-					"size-12 is-horizontal:hidden relative bg-white/80 backdrop-blur-md text-primary rounded-full",
-					"flex items-center justify-center",
-					"is-vertical:starting:-translate-x-4 is-vertical:starting:opacity-0",
-					"is-vertical:transition-all duration-300 starting:duration-800 delay-600",
-					"cursor-pointer",
-				)}
-				activeProps={{
-					className: "-ml-14 opacity-0 cursor-default!",
-					"aria-disabled": true,
-				}}
-			>
-				<h1 className="size-8.5">
-					<Icon name="home" className="block size-full" label="Marie • Simon • 11.07.2026" />
-				</h1>
-			</Link>
-
+		<Header>
 			<nav
 				className={cn(
-					"flex justify-evenly is-vertical:gap-2 is-vertical:px-2 is-horizontal:flex-col is-vertical:grow",
-					"bg-white/80 backdrop-blur-md is-vertical:h-12 rounded-full",
-					"is-vertical:starting:translate-x-4 is-vertical:starting:opacity-0 is-vertical:transition-all is-vertical:duration-300 is-vertical:starting:duration-800 is-vertical:delay-600",
+					"flex justify-evenly items-center gap-4 is-vertical:px-2 is-horizontal:flex-col is-vertical:grow",
+					"is-horizontal:pt-[2vw] is-horizontal:px-[.5vw]",
+					"is-vertical:bg-white/80 is-vertical:backdrop-blur-md is-vertical:h-12 rounded-full",
+					"translate-0 is-vertical:starting:translate-x-4 is-vertical:starting:opacity-0 is-vertical:transition-all is-vertical:duration-300 is-vertical:starting:duration-800 is-vertical:delay-600",
 				)}
 				role="navigation"
 				aria-label="Menu"
@@ -76,14 +36,17 @@ export const Navbar = () => {
 							mediaType,
 						}}
 						className={cn(
-							"size-12 is-horizontal:size-16 lg:is-horizontal:size-[6vw]",
-							"flex flex-col justify-center items-center gap-0.5 is-horizontal:gap-1",
-							"text-neutral-600 drop-shadow-px text-3xs uppercase text-center",
-							"is-horizontal:starting:translate-y-4 is-horizontal:starting:opacity-0 is-horizontal:transition duration-800",
-							"cursor-pointer"
+							"is-vertical:size-12 is-vertical:flex-1 is-horizontal:w-full",
+							"is-horizontal:py-[.5vw]",
+							"flex flex-col justify-center items-center is-vertical:gap-0.5 gap-1 2xl:gap-[.25vw]",
+							"text-neutral-600 drop-shadow-px text-3xs 2xl:text-[.5vw] uppercase text-center",
+							"translate-0 is-horizontal:starting:translate-y-4 is-horizontal:starting:opacity-0",
+							"hover:text-primary cursor-pointer",
+							"is-horizontal:hover:bg-primary/5 is-vertical:rounded-full is-horizontal:rounded-lg",
+							"outline-2 outline-transparent focus-visible:bg-primary/5 focus-visible:outline-primary",
 						)}
 						style={{
-							transitionDelay: `${600 + 100 * index}ms`,
+							transition: `all 800ms ${600 + 100 * index}ms, background-color 300ms 100ms, outline-color 300ms 100ms, color 300ms 100ms`,
 						}}
 						activeProps={{
 							className: "text-primary",
@@ -91,12 +54,44 @@ export const Navbar = () => {
 					>
 						<Icon
 							name={mediaType as Icons}
-							className="size-5 is-horizontal:size-6"
+							className="size-5 lg:size-[1.5vw]"
 						/>
 						<span>{getMediaTypeLabel(mediaType)}</span>
 					</Link>
 				))}
+				{canUpload() && (
+					<>
+						<hr
+							className="bg-neutral-300 h-0.5 w-1/2 border-0 rounded-full translate-0 starting:translate-y-2 starting:opacity-0 is-vertical:hidden transition"
+							style={{
+								transition: `all 800ms ${600 + 100 * data.items.length}ms`,
+							}}
+						/>
+						<button
+							className={cn(
+								"is-vertical:size-12 is-vertical:flex-1 is-horizontal:w-full",
+								"is-horizontal:py-[.5vw]",
+								"flex flex-col justify-center items-center is-vertical:gap-0.5 gap-1 2xl:gap-[.25vw]",
+								"text-neutral-600 drop-shadow-px text-3xs 2xl:text-[.5vw] uppercase text-center",
+								"translate-0 is-horizontal:starting:translate-y-4 is-horizontal:starting:opacity-0",
+								"hover:text-accent cursor-pointer",
+								"is-horizontal:hover:bg-accent/10 is-vertical:rounded-full is-horizontal:rounded-lg",
+								"outline-2 outline-transparent focus-visible:bg-accent/15 focus-visible:outline-accent",
+							)}
+							style={{
+								transition: `all 800ms ${600 + 100 * (data.items.length + 1)}ms, background-color 300ms 100ms, outline-color 300ms 100ms, color 300ms 100ms`,
+							}}
+							onClick={() => openDrawer(<MediaFilesFormDrawer />)}
+						>
+							<Icon
+								name="add"
+								className="size-5 lg:size-[1.5vw]"
+							/>
+							<span>Ajouter</span>
+						</button>
+					</>
+				)}
 			</nav>
-		</header>
+		</Header>
 	)
 }
