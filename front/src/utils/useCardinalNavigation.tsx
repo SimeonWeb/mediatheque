@@ -1,5 +1,12 @@
 import { useEffect } from "react"
 
+export type TouchMoveParams = {
+	x: number
+	y: number
+	min: number
+	event: TouchEvent
+}
+
 export type KeyboardNavigationEvents = {
 	onKeyTop: () => void
 	onKeyRight: () => void
@@ -12,7 +19,7 @@ export type TouchNavigationEvents = {
 	onSwipeRight: () => void
 	onSwipeBottom: () => void
 	onSwipeLeft: () => void
-	onTouchMove: (x: number, y: number) => void
+	onTouchMove: (params: TouchMoveParams) => void
 }
 
 export type GeneralNavigationEvents = {
@@ -43,6 +50,7 @@ export const useCardinalNavigation = ({
 	onBottom,
 	onLeft,
 }: UseCardinalNavigationEvents) => {
+	const min = 50
 
 	// Keyboard navigation
 	useEffect(
@@ -98,9 +106,6 @@ export const useCardinalNavigation = ({
 
 			// General events are inversed on swipe because of navigation logic
 			const doSwipe = () => {
-				// TODO: Manage swipe time to check for scroll or swipe
-				// TODO: Add swipe
-				const min = 50
 				const diffX = touchEndX - touchStartX
 				const diffY = touchEndY - touchStartY
 
@@ -149,7 +154,7 @@ export const useCardinalNavigation = ({
 				const diffX = touchMoveX - touchStartX
 				const diffY = touchMoveY - touchStartY
 
-				onTouchMove?.(diffX, diffY)
+				onTouchMove?.({ x: diffX, y: diffY, min, event })
 			}
 
 			const handleTouchEnd = (event: TouchEvent) => {

@@ -11,7 +11,7 @@ import { getColumns } from "@/features/audioPlaylist/utils/columns"
 import { getFileUrl } from "@/utils/file"
 import { isPlaylist } from "@/features/mediaFile/utils/helpers"
 
-import { Button, ExternalLinkButton } from "./Button"
+import { Button, ExternalLinkButton, LinkButton } from "./Button"
 import { Datagrid, WithDatagrid } from "./Datagrid"
 import { Badge } from "./Badge"
 import { Group } from "./Group"
@@ -129,7 +129,7 @@ export const PreviewItemLegend = ({ children }: PropsWithChildren) => (
 	</div>
 )
 
-export const PreviewDocument = ({ item: { extension, originalName, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
+export const PreviewDocument = ({ item: { extension, originalName, paths, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
 	<WithPreviewItemNavigation {...navigationEvents}>
 		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
 			<div className="flex flex-col gap-4 items-center justify-center text-primary text-center row-start-1 col-start-1">
@@ -138,6 +138,7 @@ export const PreviewDocument = ({ item: { extension, originalName, uploader, cre
 					<span className="col-start-1 row-start-1 text-white/80 text-base pt-5 uppercase">{extension}</span>
 				</div>
 				<Badge>{originalName}</Badge>
+				<LinkButton href={getFileUrl(paths.full)} target="_blank">Télécharger</LinkButton>
 			</div>
 			<PreviewItemLegend>{uploader.name} • {displayDateTime(createdAt)}</PreviewItemLegend>
 		</DialogTitle>
@@ -146,7 +147,7 @@ export const PreviewDocument = ({ item: { extension, originalName, uploader, cre
 
 export const PreviewImage = ({ item: { paths, originalName, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
 	<WithPreviewItemNavigation {...navigationEvents}>
-		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full z-20" style={style}>
+		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
 			<img
 				src={getFileUrl(paths.medium)}
 				srcSet={`${getFileUrl(paths.medium)} 1080w, ${getFileUrl(paths.full)} 1920w`}
@@ -282,6 +283,7 @@ export const PreviewPlaylist = ({ item: { paths, originalName, meta }, style, na
 									intent="text"
 									rounded={false}
 									className={streamingServiceVariants({ service })}
+									target="_blank"
 								>
 									<WithIcon
 										before={service}

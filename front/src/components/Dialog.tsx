@@ -1,20 +1,18 @@
 import { DialogBackdrop, Dialog as DialogBase, DialogPanel } from "@headlessui/react"
-import type { PropsWithClassName } from "react"
+import type { ComponentPropsWithRef } from "react"
 
 import { cn } from "@/utils/cn"
 
 import { Button } from "./Button"
 import { WithIcon } from "./WithIcon"
 
-
-export type DialogProps = PropsWithClassName<{
-	id?: string
+export type DialogProps = Pick<ComponentPropsWithRef<"div">, "id" | "ref" | "className"> & {
 	role?: "dialog" | "alertdialog"
 	isOpen?: boolean
 	close: (context?: unknown) => void
 	containerClassName?: string
 	children?: React.ReactNode | ((props: { close: (context?: unknown) => void }) => React.ReactNode)
-}>
+}
 
 export const Dialog = ({ isOpen = true, close, children, containerClassName, className, ...props }: DialogProps) => {
 	return (
@@ -33,7 +31,7 @@ export const Dialog = ({ isOpen = true, close, children, containerClassName, cla
 		>
 			<DialogBackdrop
 				transition
-				className="fixed inset-0 bg-neutral-900/95 backdrop-blur-xl transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in cursor-pointer"
+				className="DialogBackdrop fixed inset-0 bg-neutral-900/95 backdrop-blur-xl transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in cursor-pointer"
 			/>
 
 			<DialogPanel
@@ -43,7 +41,7 @@ export const Dialog = ({ isOpen = true, close, children, containerClassName, cla
 					"pointer-events-auto",
 					"relative transform",
 					"transition",
-					"data-closed:scale-90 data-closed:opacity-0 data-enter:ease-out",
+					"data-closed:scale-80 data-closed:opacity-0 data-enter:ease-out",
 					"data-leave:duration-200 data-leave:ease-in",
 					className
 				)}

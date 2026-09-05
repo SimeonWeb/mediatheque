@@ -43,7 +43,7 @@ export const MediaGridDocument = ({ name, extension, type }: MediaGridItemProps)
 					: (
 						<>
 							<Icon name="document" className="col-start-1 row-start-1 size-full" />
-							<span className="col-start-1 row-start-1 text-white/80 text-[10cqb] pt-[10cqb]">{extension}</span>
+							<span className="col-start-1 row-start-1 text-white/80 text-[8cqb] pt-[10cqb]">{extension}</span>
 						</>
 					)
 				}

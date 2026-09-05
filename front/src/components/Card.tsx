@@ -9,7 +9,7 @@ import { Wrapper, type WrapperProps } from "./Wrapper"
 const cardVariants = cva(
 	[
 		"Card",
-		"flex flex-wrap flex-col gap-px",
+		"flex flex-col gap-px",
 	],
 	{
 		variants: {

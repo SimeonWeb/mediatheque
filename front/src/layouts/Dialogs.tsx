@@ -1,8 +1,9 @@
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useReducer, useState } from "react"
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { type DefaultError, type MutationOptions, useMutation } from "@tanstack/react-query"
 
 import { Card, CardItem } from "@/components/Card"
 import { Dialog as DialogBase, type DialogProps as DialogBaseProps, DialogChildren } from "@/components/Dialog"
+import { type TouchNavigationEvents, useCardinalNavigation } from "@/utils/useCardinalNavigation"
 import { defaultCloseLabel, defaultConfirmLabel, defaultErrorMessage, defaultUndoLabel } from "@/utils/default"
 import { Alert } from "@/components/Alert"
 import { Button } from "@/components/Button"
@@ -13,10 +14,10 @@ import type { MediaFile } from "@/features/mediaFile/api/types"
 import { PreviewItem } from "@/components/PreviewItem"
 import { WithLoading } from "@/components/WithLoading"
 import { cn } from "@/utils/cn"
-import { sleep } from "@/utils/sleep"
-import { useCardinalNavigation } from "@/utils/useCardinalNavigation"
-import { useFiles } from "@/features/mediaFile/utils/store"
 import { isPlaylist } from "@/features/mediaFile/utils/helpers"
+import { sleep } from "@/utils/sleep"
+import { useDialog } from "@/stores/dialog"
+import { useFiles } from "@/features/mediaFile/utils/store"
 
 export interface DialogProps extends DialogBaseProps {
 	title: ReactNode
@@ -234,8 +235,22 @@ export interface PreviewProps extends DialogBaseProps {
 	onItem?: (item: MediaFile, index: number, isLast: boolean) => void
 }
 
-export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
+export const Preview = ({ index, onItem, ref, ...props }: PreviewProps) => {
 	const files = useFiles(state => state.items)
+
+	const dialogRef = useRef<HTMLDivElement>(null)
+	const mergedRef = useCallback(
+		(element: HTMLDivElement | null) => {
+			dialogRef.current = element
+
+			if (typeof ref === "function") {
+				ref(element)
+			} else if (ref) {
+				ref.current = element
+			}
+		},
+		[ref]
+	)
 
 	const [currentIndex, setCurrentIndex] = useState(index)
 	const [style, setStyle] = useState<CSSProperties>()
@@ -253,14 +268,46 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 		},
 		[]
 	)
-	// const handleTouchMove = useCallback<TouchNavigationEvents["onTouchMove"]>(
-	// 	x => {
-	// 		setStyle({
-	// 			translate: `${x}px 0px`,
-	// 		})
-	// 	},
-	// 	[]
-	// )
+	const handleTouchMove = useCallback<TouchNavigationEvents["onTouchMove"]>(
+		({ y, min }) => {
+			if (isPlaylist(files[currentIndex])) {
+				return
+			}
+
+			const dialogElement = dialogRef.current
+
+			if (!dialogElement) {
+				return
+			}
+
+			const backdrop = dialogElement.querySelector(".DialogBackdrop") as HTMLDivElement | undefined
+			const panel = dialogElement.querySelector(".DialogPanel") as HTMLDivElement | undefined
+
+			if (!backdrop || !panel) {
+				return
+			}
+
+			if (y < min) {
+				return
+			}
+
+			const maxPx = 150
+			const ratio = (y - min) / maxPx
+
+			// backdrop: opacity-0
+			// panel: opacity-0 scale-80
+			const opacityRange = 1
+			const scaleRange = .2
+
+			const opacity = `${1 - opacityRange * ratio}`
+			const scale = `${1 - scaleRange * ratio}`
+
+			backdrop.style.setProperty("opacity", opacity)
+			panel.style.setProperty("opacity", opacity)
+			panel.style.setProperty("scale", scale)
+		},
+		[currentIndex, files]
+	)
 	const handleRight = useCallback(
 		() => {
 			setCurrentIndex(currentIndex => {
@@ -279,16 +326,15 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 				return
 			}
 
-			props.close()
+			useDialog.getState().close()
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[currentIndex]
+		[currentIndex, files]
 	)
 
 	useCardinalNavigation({
 		onLeft: handleLeft,
 		onRight: handleRight,
-		// onTouchMove: handleTouchMove,
+		onTouchMove: handleTouchMove,
 		onSwipeBottom: handleSwipeClose,
 	})
 
@@ -305,6 +351,7 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 	return (
 		<DialogBase
 			{...props}
+			ref={mergedRef}
 			className={cn(
 				"pointer-events-none w-full h-full",
 				props.className

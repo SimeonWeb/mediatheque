@@ -1,14 +1,14 @@
 import type { Batch, BatchItem } from "@rpldy/uploady"
 
+import { getExtensionFromMime, getTypeFromMime } from "@/features/mediaFile/utils/helpers"
 import type { MediaGridItemProps } from "@/components/MediaGridItem"
-import { getTypeFromMime } from "@/features/mediaFile/utils/helpers"
 
 export const toMediaGridItem = ({ id, file }: BatchItem): MediaGridItemProps => ({
 	id,
 	name: file.name,
 	// @ts-expect-error incompatble types but it's ok...
 	src: URL.createObjectURL(file),
-	extension: "",
+	extension: getExtensionFromMime(file.type),
 	type: getTypeFromMime(file.type),
 })
 
@@ -34,6 +34,9 @@ export const getBatchItemCount = ({ items }: Pick<Batch, "items">) => (
 					break
 				case "audio":
 					prev.audio++
+					break
+				case "application":
+					prev.document++
 					break
 				default:
 					prev.other++

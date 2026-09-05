@@ -14,6 +14,10 @@ export const getTypeFromMime = (mimeType: string) => (
 	mimeType.replace(/\/.+$/g, "")
 )
 
+export const getExtensionFromMime = (mimeType: string) => (
+	mimeType.replace(/^.+\//g, "")
+)
+
 export const isPlaylist = ({ type, extension }: MediaFile) => (
 	type === "audio" && extension === "json"
 )

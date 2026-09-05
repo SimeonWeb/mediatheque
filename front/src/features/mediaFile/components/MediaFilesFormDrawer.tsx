@@ -1,4 +1,4 @@
-import { type Batch, type BatchItem, ChunkedUploady, FILE_STATES, UPLOADER_EVENTS, useAbortAll, useAbortItem, useAllAbortListener, useBatchAddListener, useBatchFinishListener, useBatchProgressListener, useChunkStartListener, useItemAbortListener, useItemFinalizeListener, useUploady } from "@rpldy/chunked-uploady"
+import { type Batch, type BatchItem, ChunkedUploady, FILE_STATES, UPLOADER_EVENTS, useAbortAll, useAbortItem, useAllAbortListener, useBatchAddListener, useBatchFinishListener, useBatchProgressListener, useChunkStartListener, useItemAbortListener, useItemFinalizeListener, useItemStartListener, useUploady } from "@rpldy/chunked-uploady"
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { UploadDropZone } from "@rpldy/upload-drop-zone"
@@ -19,7 +19,6 @@ import { FormSubmit } from "@/components/FormSubmit"
 import { Group } from "@/components/Group"
 import { Icon } from "@/components/Icon"
 import { InputFormField } from "@/components/InputFormField"
-import { Loader } from "@/components/Loader"
 import { MediaGridContainer } from "@/components/MediaGrid"
 import { MediaGridItem } from "@/components/MediaGridItem"
 import type { UploaderItem } from "@/features/uploader/api/types"
@@ -30,15 +29,29 @@ import { defaultItemsPerPage } from "@/utils/pagination"
 import { getPluralizedText } from "@/utils/text"
 import { invalidateMediaTypeQueries } from "@/features/mediaType/api/fetch"
 import { invalidateUploaderQueries } from "@/features/uploader/api/fetch"
+import { sleep } from "@/utils/sleep"
 import { uploaderEntityLabel } from "@/features/uploader/utils/labels"
 import { useDialog } from "@/stores/dialog"
 
 import { invalidateMediaFileQueries } from "../api/fetch"
-import { sleep } from "@/utils/sleep"
 
 const UploadButton = asUploadButton<ButtonProps>(props => (
 	<Button intent="primary" autoFocus {...props} />
 ))
+
+const UploadChunkParams = () => {
+	useChunkStartListener(({ item, sendOptions }) => ({
+		sendOptions: {
+			...sendOptions,
+			params: {
+				...sendOptions.params,
+				upload_id: item.id,
+			},
+		},
+	}))
+
+	return null
+}
 
 const UploadZone = () => (
 	<UploadDropZone
@@ -60,20 +73,6 @@ const UploadZone = () => (
 	</UploadDropZone>
 )
 
-const UploadChunkParams = () => {
-	useChunkStartListener(({ item, sendOptions }) => ({
-		sendOptions: {
-			...sendOptions,
-			params: {
-				...sendOptions.params,
-				upload_id: item.id,
-			},
-		},
-	}))
-
-	return null
-}
-
 type PreviewMediaItemProps = {
 	item: BatchItem
 	index: number
@@ -87,18 +86,19 @@ const PreviewMediaItem = ({
 
 	const abortItem = useAbortItem()
 
-	useItemFinalizeListener(
-		item => {
-			setState(item.state)
-		},
+	useItemStartListener(
+		item => setState(item.state),
 		item.id
 	)
 
-	console.log(item.id, itemState)
+	useItemFinalizeListener(
+		item => setState(item.state),
+		item.id
+	)
 
 	const isPending = itemState === FILE_STATES.PENDING
 	const isAborted = itemState === FILE_STATES.ABORTED
-	const isUploading = itemState === FILE_STATES.UPLOADING
+	const isUploading = [FILE_STATES.UPLOADING, FILE_STATES.ADDED].includes(itemState)
 	const isSuccess = itemState === FILE_STATES.FINISHED
 	const isError = itemState === FILE_STATES.ERROR
 
@@ -120,18 +120,24 @@ const PreviewMediaItem = ({
 			<MediaGridItem {...toMediaGridItem(item)} />
 			{isPending && (
 				<div
-					className="absolute right-1 top-1 sm:right-2 sm:top-2 flex justify-center items-center"
+					className="absolute right-0 top-0 sm:right-1 sm:top-1 flex justify-center items-center"
 				>
 					<Button
 						onClick={onAbortItem}
 						isNarrow
 						size="sm"
-						intent="error"
+						intent="text"
+						rounded={false}
 						className={cn(
 							"sm:scale-70 sm:opacity-0",
 							"group-focus-within:opacity-100 group-focus-within:scale-100",
 							"group-hover:opacity-100 group-hover:scale-100",
-							"transition delay-300"
+							"bg-white/80 text-error",
+							"hover:not-data-disabled:text-white data-open:text-white",
+							"hover:not-data-disabled:bg-error-highlight data-open:bg-error-highlight",
+							"focus-visible:outline-error/70",
+							"max-sm:rounded-none max-sm:rounded-bl",
+							"transition delay-300",
 						)}
 					>
 						<WithIcon before="x" className="sr-only">Supprimer</WithIcon>
@@ -143,15 +149,19 @@ const PreviewMediaItem = ({
 					className={cn(
 						"absolute inset-0 bg-white/80 text-primary",
 						"flex justify-center items-center",
+						"starting:opacity-0",
 						"text-xl",
 						{
 							"text-error": isError,
 						}
 					)}
 				>
-					{isUploading && <Loader />}
-					{isSuccess && <Icon name="check" />}
-					{isError && <Icon name="error" />}
+					<WithLoading
+						isLoading={isUploading}
+						isSuccess={isSuccess}
+					>
+						<Icon name="error" />
+					</WithLoading>
 				</div>
 			)}
 		</div>
@@ -163,10 +173,7 @@ const PreviewZone = () => {
 	const [items, setItems] = useState<BatchItem[]>([])
 
 	const abortAll = useAbortAll()
-	// Get current batch info
-	const { completed, state, ...rest } = useBatchProgressListener() || { completed: 0 }
-
-	console.log("batch", { completed, state, ...rest })
+	const { completed, state } = useBatchProgressListener() || { completed: 0 }
 
 	useBatchAddListener(batch => {
 		setItems(items => items.concat(batch.items))
@@ -231,9 +238,6 @@ const PreviewZone = () => {
 					</Button>
 				</Group>
 			</CardHeader>
-			{/**
-			 * TODO: BUG height with document mediaFiles
-			 */}
 			<CardItem isIso>
 				<MediaGridContainer>
 					{items.map((item, index) => (
@@ -370,6 +374,8 @@ export const MediaFilesFormDrawer = () => {
 		[data]
 	)
 
+	// TODO Add swipeDown to close
+
 	return (
 		<>
 			{uploader
@@ -409,7 +415,6 @@ export const MediaFilesFormDrawer = () => {
 										listeners={{
 											[UPLOADER_EVENTS.BATCH_FINALIZE]: async batch => {
 												if (batch.total > 0) {
-													console.log("setSuccessBatch", batch)
 													await sleep(500)
 													setSuccessBatch(batch)
 												}
