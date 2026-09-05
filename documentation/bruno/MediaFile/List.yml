@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{host}}/media_files?page=1&itemsPerPage=50&uploader=machin&sort[createdAt]=ASC"
+  url: "{{host}}/media_files?page=1&itemsPerPage=50&sort[createdAt]=ASC&type=audio"
   params:
     - name: page
       value: "1"
@@ -16,8 +16,12 @@ http:
     - name: uploader
       value: machin
       type: query
+      disabled: true
     - name: sort[createdAt]
       value: ASC
+      type: query
+    - name: type
+      value: audio
       type: query
   auth: inherit
 
@@ -26,3 +30,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

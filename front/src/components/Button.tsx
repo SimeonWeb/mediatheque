@@ -69,12 +69,11 @@ const buttonVariants = cva(
 					"focus-visible:outline-info/70",
 				],
 				text: [
-					"outline-offset-0",
 					"text-current",
 					"hover:not-data-disabled:text-neutral-900 data-open:text-neutral-900",
 					"focus-visible:text-neutral-900",
 					"hover:not-data-disabled:bg-neutral-100 data-open:bg-neutral-100",
-					"focus-visible:outline-neutral-400",
+					"focus-visible:bg-neutral-100 focus-visible:outline-neutral-400",
 				],
 			},
 			rounded: {

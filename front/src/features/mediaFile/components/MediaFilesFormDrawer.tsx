@@ -231,6 +231,9 @@ const PreviewZone = () => {
 					</Button>
 				</Group>
 			</CardHeader>
+			{/**
+			 * TODO: BUG height with document mediaFiles
+			 */}
 			<CardItem isIso>
 				<MediaGridContainer>
 					{items.map((item, index) => (

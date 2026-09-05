@@ -40,11 +40,11 @@ export const useAuth = create<AuthState & AuthActions>()(
 					}
 				},
 				canUpload: all => {
-					if (all && get().role === "UPLOAD_ALL") {
+					if (get().role === "UPLOAD_ALL") {
 						return true
 					}
 
-					return get().role === "UPLOAD"
+					return !all && get().role === "UPLOAD"
 				},
 			}),
 		),

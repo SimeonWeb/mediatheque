@@ -51,7 +51,7 @@ const listBoxButtonVariants = cva(
 		variants: {
 			intent: {
 				default: [
-					"bg-white/60 backdrop-blur-md",
+					"bg-white/60 backdrop-blur-xl",
 					"text-neutral-900 placeholder:text-neutral-400 disabled:text-neutral-400 aria-readonly:text-neutral-900",
 					"outline-transparent data-focus:outline-primary",
 				],
@@ -250,7 +250,7 @@ export const Listbox = <
 						"min-w-(--button-width)",
 						"flex flex-col gap-1 p-1",
 						"rounded-3xl outline-none",
-						"bg-white/60 backdrop-blur-md",
+						"bg-white/60 backdrop-blur-xl",
 						"data-closed:translate-y-2 data-closed:opacity-0",
 						"shadow-[0_1rem_2rem_var(--tw-shadow-color)] shadow-black/10",
 						"transition",

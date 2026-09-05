@@ -20,9 +20,9 @@ export const Navbar = () => {
 		<Header>
 			<nav
 				className={cn(
-					"flex justify-evenly items-center gap-4 is-vertical:px-2 is-horizontal:flex-col is-vertical:grow",
+					"flex justify-evenly items-center gap-1 is-vertical:px-2 is-horizontal:flex-col is-vertical:grow",
 					"is-horizontal:pt-[2vw] is-horizontal:px-[.5vw]",
-					"is-vertical:bg-white/80 is-vertical:backdrop-blur-md is-vertical:h-12 rounded-full",
+					"is-vertical:bg-white/80 is-vertical:backdrop-blur-xl is-vertical:h-12 rounded-full",
 					"translate-0 is-vertical:starting:translate-x-4 is-vertical:starting:opacity-0 is-vertical:transition-all is-vertical:duration-300 is-vertical:starting:duration-800 is-vertical:delay-600",
 				)}
 				role="navigation"

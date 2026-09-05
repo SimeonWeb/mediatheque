@@ -11,9 +11,14 @@ use ApiPlatform\Metadata\QueryParameter;
 use App\Enum\MediaType;
 use App\Repository\MediaFileRepository;
 use App\State\UploadFileProcessor;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use InvalidArgumentException;
+use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -130,6 +135,10 @@ class MediaFile
     #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
     private Uploader $uploader;
 
+    /** @var Collection<int, MediaFileMeta> */
+    #[ORM\OneToMany(mappedBy: 'mediaFile', targetEntity: MediaFileMeta::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $metadata;
+
     public function __construct(
         string $originalName,
         string $storageName,
@@ -161,6 +170,7 @@ class MediaFile
         $this->thumbnailRelativePath = $thumbnailRelativePath;
         $this->fullRelativePath = $fullRelativePath;
         $this->mediumRelativePath = $mediumRelativePath;
+        $this->metadata = new ArrayCollection();
     }
 
     #[Groups(['media_file:read'])]
@@ -240,6 +250,85 @@ class MediaFile
     public function getUploader(): Uploader
     {
         return $this->uploader;
+    }
+
+    public function refreshStoredFile(
+        string $originalName,
+        string $relativePath,
+        string $mimeType,
+        MediaType $type,
+        ?string $extension,
+        int $size,
+        Uploader $uploader,
+        ?string $thumbnailRelativePath = null,
+        ?\DateTimeImmutable $uploadedAt = null,
+    ): void {
+        $this->originalName = $originalName;
+        $this->relativePath = $relativePath;
+        $this->mimeType = $mimeType;
+        $this->mediaType = $type;
+        $this->extension = $extension;
+        $this->size = $size;
+        $this->uploadedAt = $uploadedAt ?? new \DateTimeImmutable();
+        $this->uploader = $uploader;
+        $this->thumbnailRelativePath = $thumbnailRelativePath;
+        $this->fullRelativePath = null;
+        $this->mediumRelativePath = null;
+    }
+
+    /**
+     * @return \ArrayObject<string, string>
+     */
+    #[Context([AbstractObjectNormalizer::PRESERVE_EMPTY_OBJECTS => true])]
+    #[Groups(['media_file:read'])]
+    public function getMeta(): \ArrayObject
+    {
+        $meta = [];
+
+        foreach ($this->metadata as $metadata) {
+            $meta[$metadata->getTitle()] = $metadata->getValue();
+        }
+
+        ksort($meta);
+
+        return new \ArrayObject($meta);
+    }
+
+    public function setMeta(string $title, string $value): MediaFileMeta
+    {
+        $title = trim($title);
+
+        if ('' === $title) {
+            throw new InvalidArgumentException('Le titre d’une métadonnée ne peut pas être vide.');
+        }
+
+        if (mb_strlen($title) > 255) {
+            throw new InvalidArgumentException('Le titre d’une métadonnée ne peut pas dépasser 255 caractères.');
+        }
+
+        foreach ($this->metadata as $metadata) {
+            if ($metadata->getTitle() === $title) {
+                $metadata->setValue($value);
+
+                return $metadata;
+            }
+        }
+
+        $metadata = new MediaFileMeta($this, $title, $value);
+        $this->metadata->add($metadata);
+
+        return $metadata;
+    }
+
+    public function removeMeta(string $title): void
+    {
+        foreach ($this->metadata as $metadata) {
+            if ($metadata->getTitle() === $title) {
+                $this->metadata->removeElement($metadata);
+
+                return;
+            }
+        }
     }
 
     /**

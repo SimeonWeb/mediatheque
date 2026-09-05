@@ -38,7 +38,7 @@ export const Header = ({ children }: PropsWithChildren) => {
 			<Link
 				to="/"
 				className={cn(
-					"size-12 is-horizontal:hidden relative bg-white/80 backdrop-blur-md text-primary rounded-full",
+					"size-12 is-horizontal:hidden relative bg-white/80 backdrop-blur-xl text-primary rounded-full",
 					"flex items-center justify-center",
 					"is-vertical:starting:-translate-x-4 is-vertical:starting:opacity-0",
 					"is-vertical:transition-all duration-300 starting:duration-800 delay-600",

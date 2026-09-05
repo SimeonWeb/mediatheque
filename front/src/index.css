@@ -27,6 +27,7 @@
 
 	--drop-shadow-px: 0 1px 0 #fff;
 
+	--cursor-default: url(/assets/cursor-default.svg), default;
 	--cursor-left: url(/assets/cursor-left.svg), pointer;
 	--cursor-right: url(/assets/cursor-right.svg), pointer;
 	--cursor-pointer: url(/assets/cursor-pointer.svg), pointer;

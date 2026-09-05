@@ -16,4 +16,6 @@ export type MediaFile = {
 	uploadedAt: string
 	uploader: Uploader
 	paths: MediaFilePaths
+	type: string
+	meta: Record<string, string>
 }
