@@ -21,7 +21,7 @@ export const Header = ({ children }: PropsWithChildren) => {
 					"flex items-center",
 					"rotate-270 origin-bottom-left translate-x-16 lg:translate-x-[6vw]",
 					"starting:translate-y-4 starting:opacity-0 transition duration-800 delay-300",
-					"is-vertical:hidden"
+					"is-vertical:hidden is-horizontal-tight:hidden"
 				)}
 			>
 				<Link
@@ -38,14 +38,15 @@ export const Header = ({ children }: PropsWithChildren) => {
 			<Link
 				to="/"
 				className={cn(
-					"size-12 is-horizontal:hidden relative bg-white/80 backdrop-blur-xl text-primary rounded-full",
+					"size-12 is-horizontal:not-is-horizontal-tight:hidden relative bg-white/80 backdrop-blur-xl text-primary rounded-full",
 					"flex items-center justify-center",
 					"is-vertical:starting:-translate-x-4 is-vertical:starting:opacity-0",
 					"is-vertical:transition-all duration-300 starting:duration-800 delay-600",
 					"cursor-pointer",
+					"is-horizontal-tight:fixed is-horizontal-tight:bottom-[1.5vw] is-horizontal-tight:w-16"
 				)}
 				activeProps={{
-					className: "-ml-14 opacity-0 cursor-default!",
+					className: "not-is-horizontal-tight:-ml-14 not-is-horizontal-tight:opacity-0 cursor-default!",
 					"aria-disabled": true,
 				}}
 			>

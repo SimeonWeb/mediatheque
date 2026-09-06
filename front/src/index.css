@@ -51,3 +51,9 @@
 		@slot;
 	}
 }
+
+@custom-variant is-horizontal-tight {
+	@media (min-aspect-ratio: 2/1) {
+		@slot;
+	}
+}
