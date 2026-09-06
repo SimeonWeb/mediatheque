@@ -1,13 +1,19 @@
 import { useAuth } from "@/stores/auth"
 
+import type { ApiCursorList, ApiList } from "./types/api"
 import { defaultItemsPerPage, defaultPage } from "./pagination"
-import type { ApiList } from "./types/api"
 import type { Method } from "./types/fetch"
 import { defaultErrorMessage } from "./default"
 
-export const getFetchUrl = (input: `/${string}`) => (
-	`${import.meta.env.VITE_API_URL}${input}`
-)
+export const getFetchUrl = (input: `/${string}`) => {
+	const apiUrl: string = import.meta.env.VITE_API_URL
+
+	if (input.startsWith("/api/") && (apiUrl === "/api" || apiUrl.endsWith("/api"))) {
+		return `${apiUrl.slice(0, -4)}${input}`
+	}
+
+	return `${apiUrl}${input}`
+}
 
 export const getFetchHeaders = () => {
 	const { token } = useAuth.getState()
@@ -34,7 +40,6 @@ export const fetchWithContext = async (
 	)
 
 	if (!response.ok) {
-		console.log(response.headers.get("content-type"))
 		if (!response.headers.get("content-type")?.match(/application\/.+json/)) {
 			throw new Error(response.statusText || defaultErrorMessage)
 		}
@@ -89,6 +94,26 @@ export const fetchToJsonWithPagination = async <D>(
 			lastPage,
 			nextPage,
 			previousPage,
+		},
+		items: data.member,
+	}
+}
+
+export const fetchToJsonWithCursorPagination = async <D>(
+	input: `/${string}`,
+	init?: RequestInit,
+): Promise<ApiCursorList<D>> => {
+	const response = await fetchWithContext(input, init)
+	const data = await response.json()
+
+	if (data["@type"] !== "Collection") {
+		throw new Error("No collection")
+	}
+
+	return {
+		pagination: {
+			next: data.view?.next ?? null,
+			previous: data.view?.previous ?? null,
 		},
 		items: data.member,
 	}

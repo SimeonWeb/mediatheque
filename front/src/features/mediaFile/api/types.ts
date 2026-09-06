@@ -7,7 +7,7 @@ export type MediaFilePaths = {
 }
 
 export type MediaFile = {
-	id: string
+	id: number
 	originalName: string
 	mimeType: string
 	extension: string

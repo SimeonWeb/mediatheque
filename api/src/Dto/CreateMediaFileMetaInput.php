@@ -6,7 +6,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 final class CreateMediaFileMetaInput
 {
-    public string $mediaFileId = '';
+    #[Assert\Positive]
+    public int $mediaFileId = 0;
 
     #[Assert\NotBlank(normalizer: 'trim')]
     #[Assert\Length(max: 255, normalizer: 'trim')]

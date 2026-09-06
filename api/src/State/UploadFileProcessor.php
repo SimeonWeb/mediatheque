@@ -70,6 +70,7 @@ final readonly class UploadFileProcessor implements ProcessorInterface
     ) {
     }
 
+    // TODO Fix uploadedAt timezone
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): MediaFile|Response
     {
         $request = $context['request'] ?? null;
@@ -78,11 +79,11 @@ final readonly class UploadFileProcessor implements ProcessorInterface
         }
 
         $uploaderId = $request->request->get('uploader_id');
-        if (!is_string($uploaderId) || '' === trim($uploaderId) || !Uuid::isValid($uploaderId)) {
-            throw new BadRequestHttpException('Le champ "uploader_id" doit contenir un UUID valide.');
+        if (!is_string($uploaderId) || !ctype_digit($uploaderId) || (int) $uploaderId < 1) {
+            throw new BadRequestHttpException('Le champ "uploader_id" doit contenir un identifiant numérique valide.');
         }
 
-        $uploader = $this->uploaderRepository->find(Uuid::fromString($uploaderId));
+        $uploader = $this->uploaderRepository->find((int) $uploaderId);
         if (null === $uploader) {
             throw new NotFoundHttpException('L’uploader demandé n’existe pas.');
         }

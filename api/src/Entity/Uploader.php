@@ -8,9 +8,9 @@ use App\Dto\CreateUploaderInput;
 use App\Exception\UploaderAlreadyExistsException;
 use App\Repository\UploaderRepository;
 use App\State\CreateUploaderProcessor;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Uid\Uuid;
 
 #[ApiResource(
     operations: [
@@ -32,8 +32,9 @@ use Symfony\Component\Uid\Uuid;
 class Uploader
 {
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    private Uuid $id;
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: Types::BIGINT)]
+    private int $id;
 
     #[ORM\Column(length: 255)]
     private string $name;
@@ -43,13 +44,12 @@ class Uploader
 
     public function __construct(string $name, string $slug)
     {
-        $this->id = Uuid::v7();
         $this->name = $name;
         $this->slug = $slug;
     }
 
     #[Groups(['media_file:read', 'uploader:create:read'])]
-    public function getId(): Uuid
+    public function getId(): int
     {
         return $this->id;
     }

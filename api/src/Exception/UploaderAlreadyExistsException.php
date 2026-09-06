@@ -8,7 +8,6 @@ use ApiPlatform\Metadata\Exception\ProblemExceptionInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Uid\Uuid;
 
 #[ErrorResource(
     status: Response::HTTP_CONFLICT,
@@ -22,11 +21,11 @@ use Symfony\Component\Uid\Uuid;
 )]
 final class UploaderAlreadyExistsException extends ConflictHttpException implements ProblemExceptionInterface
 {
-    /** @var array{uploaderId: Uuid} */
+    /** @var array{uploaderId: int} */
     private readonly array $data;
 
     public function __construct(
-        Uuid $uploaderId,
+        int $uploaderId,
         ?\Throwable $previous = null,
     ) {
         $this->data = ['uploaderId' => $uploaderId];
@@ -37,7 +36,7 @@ final class UploaderAlreadyExistsException extends ConflictHttpException impleme
     #[Groups(['jsonld', 'jsonproblem', 'jsonapi'])]
     #[ApiProperty(writable: false, initializable: false)]
     /**
-     * @return array{uploaderId: Uuid}
+     * @return array{uploaderId: int}
      */
     public function getData(): array
     {

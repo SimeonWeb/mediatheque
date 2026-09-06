@@ -3,13 +3,13 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import { useIntersectionObserver } from "usehooks-ts"
 
+import { getMediaFiles, getMediaFilesPage } from "@/features/mediaFile/api/fetch"
 import { Listbox } from "@/components/Listbox"
 import { Loader } from "@/components/Loader"
 import { MediaGrid } from "@/components/MediaGrid"
 import { WithIcon } from "@/components/WithIcon"
 import { cn } from "@/utils/cn"
 import { defaultItemsPerPage } from "@/utils/pagination"
-import { getMediaFiles } from "@/features/mediaFile/api/fetch"
 import { toMediaGridItem } from "@/features/mediaFile/utils/helpers"
 import { uploadersQueryOptions } from "@/features/uploader/api/options"
 import { useFiles } from "@/features/mediaFile/utils/store"
@@ -51,16 +51,20 @@ export const MediaTypeComponent = () => {
 				uploader,
 			},
 		],
-		queryFn: ({ pageParam }) => getMediaFiles({
-			page: pageParam,
-			itemsPerPage: defaultItemsPerPage,
-			"sort[createdAt]": "ASC",
-			type,
-			uploader,
-		}),
-		initialPageParam: 1,
+		queryFn: ({ pageParam }) => (
+			pageParam
+				? getMediaFilesPage(pageParam)
+				: getMediaFiles({
+					itemsPerPage: defaultItemsPerPage,
+					type,
+					uploader,
+				})
+		),
+		initialPageParam: null as `/${string}` | null,
 		getNextPageParam: lastPage => (
-			lastPage.pagination.nextPage ?? undefined
+			lastPage.items.length === defaultItemsPerPage
+				? lastPage.pagination.next ?? undefined
+				: undefined
 		),
 	})
 

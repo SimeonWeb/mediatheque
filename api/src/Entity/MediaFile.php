@@ -3,13 +3,13 @@
 namespace App\Entity;
 
 use ApiPlatform\Doctrine\Orm\Filter\ExactFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use App\Enum\MediaType;
 use App\Repository\MediaFileRepository;
+use App\State\MediaFileCursorProvider;
 use App\State\UploadFileProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -19,7 +19,6 @@ use InvalidArgumentException;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -37,15 +36,17 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(
             uriTemplate: '/media_files',
             normalizationContext: ['groups' => ['media_file:read']],
-            order: ['uploadedAt' => 'DESC'],
+            provider: MediaFileCursorProvider::class,
+            order: ['createdAt' => 'ASC', 'id' => 'ASC'],
             paginationItemsPerPage: 20,
             paginationMaximumItemsPerPage: 100,
             paginationClientItemsPerPage: true,
+            paginationPartial: true,
+            paginationViaCursor: [
+                ['field' => 'createdAt', 'direction' => 'ASC'],
+                ['field' => 'id', 'direction' => 'ASC'],
+            ],
             parameters: [
-                'page' => new QueryParameter(
-                    schema: ['type' => 'integer', 'minimum' => 1],
-                    castToNativeType: true,
-                ),
                 'itemsPerPage' => new QueryParameter(
                     schema: ['type' => 'integer', 'minimum' => 1, 'maximum' => 100],
                     castToNativeType: true,
@@ -69,13 +70,23 @@ use Symfony\Component\Validator\Constraints as Assert;
                         new Assert\Choice(choices: MediaType::VALUES),
                     ],
                 ),
-                'sort[type]' => new QueryParameter(
-                    property: 'mediaType',
-                    filter: new SortFilter(),
+                'createdAt' => new QueryParameter(
+                    schema: [
+                        'type' => 'object',
+                        'properties' => [
+                            'gt' => ['type' => 'string', 'format' => 'date-time'],
+                            'lt' => ['type' => 'string', 'format' => 'date-time'],
+                        ],
+                    ],
                 ),
-                'sort[:property]' => new QueryParameter(
-                    properties: ['originalName', 'mimeType', 'size', 'createdAt', 'uploadedAt'],
-                    filter: new SortFilter(),
+                'id' => new QueryParameter(
+                    schema: [
+                        'type' => 'object',
+                        'properties' => [
+                            'gt' => ['type' => 'integer'],
+                            'lt' => ['type' => 'integer'],
+                        ],
+                    ],
                 ),
             ],
         ),
@@ -88,12 +99,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'idx_media_file_type', columns: ['type'])]
 #[ORM\Index(name: 'idx_media_file_size', columns: ['size'])]
 #[ORM\Index(name: 'idx_media_file_created_at', columns: ['created_at'])]
+#[ORM\Index(name: 'idx_media_file_created_at_id', columns: ['created_at', 'id'])]
 #[ORM\Index(name: 'idx_media_file_uploaded_at', columns: ['uploaded_at'])]
 class MediaFile
 {
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    private Uuid $id;
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: Types::BIGINT)]
+    private int $id;
 
     #[ORM\Column(length: 255)]
     private string $originalName;
@@ -156,7 +169,6 @@ class MediaFile
     ) {
         $uploadedAt ??= new \DateTimeImmutable();
 
-        $this->id = Uuid::v7();
         $this->originalName = $originalName;
         $this->storageName = $storageName;
         $this->relativePath = $relativePath;
@@ -174,7 +186,7 @@ class MediaFile
     }
 
     #[Groups(['media_file:read'])]
-    public function getId(): Uuid
+    public function getId(): int
     {
         return $this->id;
     }

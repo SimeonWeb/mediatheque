@@ -153,11 +153,11 @@ final class ScrapeApplePlaylistCommand extends Command
             $this->entityManager->flush();
 
             $output->writeln(sprintf(
-                '<info>%d morceau(x) exporté(s) dans %s ; MediaFile %s (%s).</info>',
+                '<info>%d morceau(x) exporté(s) dans %s ; MediaFile %d (%s).</info>',
                 count($items),
                 $destinationDirectory,
                 $databaseAction,
-                $mediaFile->getId()->toRfc4122(),
+                $mediaFile->getId(),
             ));
 
             return Command::SUCCESS;

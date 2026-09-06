@@ -1,8 +1,8 @@
 import { type DefaultError, type MutationOptions, keepPreviousData, queryOptions } from "@tanstack/react-query"
 
-import type { ApiList, ListQueryParams } from "./types/api"
-import type { ListQueryOptions, QueryOptions } from "./types/query"
-import { type PaginationState, paginationStateToQueryParams } from "./pagination"
+import type { ApiCursorList, ApiList, ListQueryParams } from "./types/api"
+import type { CursorListQueryOptions, ListQueryOptions, QueryOptions } from "./types/query"
+import { type PaginationState, defaultItemsPerPage, paginationStateToQueryParams } from "./pagination"
 
 export type ListParams<P>
 	= PaginationState
@@ -15,6 +15,25 @@ export const listQueryOptions = <TData = unknown, TParams extends Record<string,
 	options: ListQueryOptions<TData, TParams>
 ) => {
 	const withDefaultParams = withDefaultListQueryParams(params)
+
+	return queryOptions({
+		placeholderData: keepPreviousData,
+		...options,
+		queryKey: [queryKey, withDefaultParams],
+		queryFn: ({ signal }) => queryFn(withDefaultParams, { signal }),
+	})
+}
+
+export const cursorListQueryOptions = <TData = unknown, TParams extends Record<string, unknown> = Record<string, unknown>>(
+	queryKey: string,
+	queryFn: (params: ListQueryParams<TParams>, init?: RequestInit) => Promise<ApiCursorList<TData>>,
+	params: Partial<ListParams<TParams>>,
+	options: CursorListQueryOptions<TData, TParams>
+) => {
+	const withDefaultParams = {
+		itemsPerPage: defaultItemsPerPage,
+		...params,
+	} as ListQueryParams<TParams>
 
 	return queryOptions({
 		placeholderData: keepPreviousData,

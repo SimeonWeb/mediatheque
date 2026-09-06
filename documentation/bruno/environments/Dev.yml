@@ -4,7 +4,7 @@ variables:
     value: http://localhost:8000/api
     description: ""
   - name: uploader_id
-    value: 01a01c02-d8ba-76e6-834f-ed1068387019
+    value: "1"
     description: ""
   - name: token
     value: all

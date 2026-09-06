@@ -24,7 +24,7 @@ final readonly class UploaderCount
     public function __construct(
         #[ApiProperty(identifier: false)]
         #[Groups(['uploader_summary:read'])]
-        public string $id,
+        public int $id,
         #[Groups(['uploader_summary:read'])]
         public string $name,
         #[Groups(['uploader_summary:read'])]

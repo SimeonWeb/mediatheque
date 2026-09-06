@@ -1,5 +1,5 @@
 export type Uploader = {
-	id: string
+	id: number
 	name: string
 	slug: string
 }
@@ -12,7 +12,7 @@ export type UploaderItem = Uploader & {
 export type AddUploaderError = Error & {
 	cause: {
 		data: {
-			uploaderId: string
+			uploaderId: number
 		}
 	}
 }

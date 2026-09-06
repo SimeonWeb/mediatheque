@@ -23,7 +23,7 @@ final readonly class UploaderCountProvider implements ProviderInterface
     {
         return array_map(
             static fn (array $row): UploaderCount => new UploaderCount(
-                $row[0]->getId()->toRfc4122(),
+                $row[0]->getId(),
                 $row[0]->getName(),
                 $row[0]->getSlug(),
                 (int) $row['total'],

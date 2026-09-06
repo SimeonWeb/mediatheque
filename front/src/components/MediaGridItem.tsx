@@ -3,7 +3,7 @@ import { cn } from "@/utils/cn"
 import { Icon } from "./Icon"
 
 export type MediaGridItemProps = {
-	id: string
+	id: string | number
 	name: string
 	src: string
 	extension?: string

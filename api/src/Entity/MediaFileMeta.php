@@ -9,7 +9,6 @@ use App\State\CreateMediaFileMetaProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Uid\Uuid;
 
 #[ApiResource(
     operations: [
@@ -36,8 +35,9 @@ use Symfony\Component\Uid\Uuid;
 class MediaFileMeta
 {
     #[ORM\Id]
-    #[ORM\Column(type: 'uuid', unique: true)]
-    private Uuid $id;
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: Types::BIGINT)]
+    private int $id;
 
     #[ORM\ManyToOne(targetEntity: MediaFile::class, inversedBy: 'metadata')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -51,20 +51,19 @@ class MediaFileMeta
 
     public function __construct(MediaFile $mediaFile, string $title, string $value)
     {
-        $this->id = Uuid::v7();
         $this->mediaFile = $mediaFile;
         $this->title = $title;
         $this->value = $value;
     }
 
     #[Groups(['media_file_meta:create:read'])]
-    public function getId(): Uuid
+    public function getId(): int
     {
         return $this->id;
     }
 
     #[Groups(['media_file_meta:create:read'])]
-    public function getMediaFileId(): Uuid
+    public function getMediaFileId(): int
     {
         return $this->mediaFile->getId();
     }

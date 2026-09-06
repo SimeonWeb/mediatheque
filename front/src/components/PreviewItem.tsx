@@ -175,6 +175,7 @@ export const PreviewVideo = ({ item: { paths, originalName, uploader, createdAt 
 )
 
 export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt, id }, style, navigationEvents }: PreviewItemProps) => {
+	const audioId = String(id)
 	const audioRef = useRef<HTMLAudioElement>(null)
 
 	const [isLoading, setIsLoading] = useState(true)
@@ -204,7 +205,7 @@ export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt,
 				>
 					<audio
 						ref={audioRef}
-						id={id}
+						id={audioId}
 						src={getFileUrl(paths.full)}
 						className="max-w-full max-h-full object-contain rounded"
 						onCanPlayThrough={() => setIsLoading(false)}
@@ -213,7 +214,7 @@ export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt,
 					</audio>
 					<Button
 						onClick={handlePlayPause}
-						aria-controls={id}
+						aria-controls={audioId}
 						intent="text"
 						size="inherit"
 					>

@@ -351,7 +351,7 @@ export const MediaFilesFormDrawer = () => {
 
 	const { mutateAsync, data, error, reset } = useMutation(addUploaderOptions())
 
-	const [uploaderId, setUploaderId] = useState<string | undefined>()
+	const [uploaderId, setUploaderId] = useState<number | undefined>()
 	const [successBatch, setSuccessBatch] = useState<Batch | undefined>()
 
 	const alreadyExists = error && error.message === "Ce nom est déjà utilisé."

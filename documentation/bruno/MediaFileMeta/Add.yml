@@ -10,9 +10,9 @@ http:
     type: json
     data: |-
       {
-        "mediaFileId": "01a06659-6ddd-7dc3-9f84-7a9f918c13b7",
+        "mediaFileId": 165,
         "title": "deezerUrl",
-        "value": "https://link.deezer.com/s/34jaIV93FvT9Xy9ImhNVc"
+        "value": "https://link.deezer.com/s/34jdaiTOYH3HPFmsxnXWK"
       }
   auth: inherit
 
