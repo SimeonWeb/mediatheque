@@ -42,7 +42,7 @@ const ButtonItem = ({ children, ...props }: NavigationElementButtonProps) => {
 			{...buttonProps}
 		>
 			{typeof children === "function"
-				? children({ isActive: false, isTransitioning: false })
+				? children({ isActive: false })
 				: children
 			}
 		</button>
@@ -52,7 +52,7 @@ const ButtonItem = ({ children, ...props }: NavigationElementButtonProps) => {
 const ExternalLinkButtonItem = ({ children, ...props }: NavigationElementExternalLinkProps) => (
 	<a {...props}>
 		{typeof children === "function"
-			? children({ isActive: false, isTransitioning: false })
+			? children({ isActive: false })
 			: children
 		}
 	</a>
@@ -78,7 +78,7 @@ export const Dropdown = ({
 				>
 					{showIcon
 						? (
-							<WithIcon after="menu">
+							<WithIcon after="chevron-vertical">
 								{children}
 							</WithIcon>
 						)
