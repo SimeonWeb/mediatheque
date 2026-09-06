@@ -70,7 +70,6 @@ final readonly class UploadFileProcessor implements ProcessorInterface
     ) {
     }
 
-    // TODO Fix uploadedAt timezone
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): MediaFile|Response
     {
         $request = $context['request'] ?? null;

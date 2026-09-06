@@ -1,0 +1,19 @@
+DirectoryIndex index.html
+Options -Indexes
+
+RewriteEngine On
+
+# Preserve the Bearer token when PHP runs through FastCGI.
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Keep Symfony's /api prefix while using a front controller outside that path.
+RewriteRule ^api(?:/.*)?$ api.php [QSA,L]
+
+# Serve built assets and uploaded files directly.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# React Router fallback.
+RewriteRule ^ index.html [L]
