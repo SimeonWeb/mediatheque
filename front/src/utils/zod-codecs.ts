@@ -1,5 +1,6 @@
 import z from "zod"
 
+import { getPluralizedText, joinText } from "./text"
 import { formatDate } from "./date"
 
 
@@ -71,6 +72,38 @@ export const timeToMinutes = z.codec(
 			const [hours, minutes] = parseTime(timeInMinutes)
 
 			return `${hours}:${minutes < 10 ? "0" : ""}${minutes}`
+		},
+	}
+)
+
+export const formatedTimeToMinutes = z.codec(
+	z.string().nullable(),
+	z.number().nullable(),
+	{
+		decode: time => {
+			if (time === null) {
+				return null
+			}
+
+			const [hours, minutes] = time.split(":").map(Number)
+
+			if (isNaN(hours)) {
+				return null
+			}
+
+			return (hours || 0) * 60 + (minutes || 0)
+		},
+		encode: formatedTimeInMinutes => {
+			if (formatedTimeInMinutes === null) {
+				return null
+			}
+
+			const [hours, minutes] = parseTime(formatedTimeInMinutes)
+
+			return joinText([
+				getPluralizedText(hours, "{amount} heures", "{amount} heure", ""),
+				getPluralizedText(minutes, "{amount} minutes", "{amount} minute", ""),
+			])
 		},
 	}
 )

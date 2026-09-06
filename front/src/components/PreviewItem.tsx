@@ -7,8 +7,11 @@ import type { MediaFile } from "@/features/mediaFile/api/types"
 import { audioPlaylistQueryOptions } from "@/features/audioPlaylist/api/option"
 import { cn } from "@/utils/cn"
 import { displayDateTime } from "@/utils/date"
+import { formatedTimeToMinutes } from "@/utils/zod-codecs"
 import { getColumns } from "@/features/audioPlaylist/utils/columns"
 import { getFileUrl } from "@/utils/file"
+import { getPluralizedText } from "@/utils/text"
+import { getTotalTime } from "@/features/audioPlaylist/utils/helpers"
 import { isPlaylist } from "@/features/mediaFile/utils/helpers"
 
 import { Button, ExternalLinkButton, LinkButton } from "./Button"
@@ -307,6 +310,13 @@ export const PreviewPlaylist = ({ item: { paths, originalName, meta }, style, na
 							<Datagrid {...table} />
 						)}
 					</WithDatagrid>
+					{data && (
+						<footer className="text-xs text-neutral-400">
+							{getPluralizedText(data.items.length, "{amount} morceaux", "{amount} morceau")}
+							{", "}
+							{formatedTimeToMinutes.encode(Math.floor(getTotalTime(data)/1000/60))}
+						</footer>
+					)}
 				</div>
 			</WithPreviewItemNavigation>
 		</div>

@@ -10,7 +10,7 @@ export const isVowelFirst = (string: string) => (
  * Each `plural`, `singular` & `none` strings must contains `{amount}`, which will be replaced by amount value
  */
 export const getPluralizedText = (amount = 0, plural: string, singular: string, none?: string) => (
-	(amount > 1 ? plural : amount === 0 && none ? none : singular).replace("{amount}", amount.toString())
+	(amount > 1 ? plural : amount === 0 && none !== undefined ? none : singular).replace("{amount}", amount.toString())
 )
 
 export const joinText = (texts: (string | number | null | undefined)[], separator = " ") => (
