@@ -146,12 +146,14 @@ Le contrôleur `api.php` configure automatiquement le stockage final dans le dos
 Se connecter au serveur avec les identifiants FTP fournis par OVHcloud et envoyer le contenu de `build/ovh-perso` dans un dossier `mediatheque` :
 
 ```text
-/mediatheque/.ovhconfig
+/.ovhconfig
 /mediatheque/app/...
 /mediatheque/public/...
 ```
 
 Vérifier après le transfert que les fichiers masqués `.ovhconfig`, `.env.local` et `.htaccess` ont bien été envoyés.
+
+Le fichier `.ovhconfig` doit être déposé à la racine du serveur, il modifira la configuration php pour l'ensemble du serveur et des sites hébergés sur celui-ci.
 
 Les dossiers suivants doivent être accessibles en écriture par PHP :
 
@@ -210,10 +212,9 @@ S'il existe une nouvelle migration, générer son SQL localement et l'exécuter 
 
 Les adaptations nécessaires à l'offre PERSO sont fournies dans `deployment/ovh-perso` : contrôleur frontal déporté, règles Apache, sélection de PHP 8.4, protection du dossier d'uploads et script SQL initial.
 
-Il reste deux points à traiter ou à surveiller :
+Il reste un point à traiter ou à surveiller :
 
-1. **Le build front doit être vert avant le premier déploiement.** À la date de rédaction, `yarn build` échoue sur des erreurs TypeScript déjà présentes dans le projet ; une livraison ne peut pas être produite tant qu'elles ne sont pas corrigées.
-2. **L'offre PERSO est adaptée à un usage modéré.** Le traitement GD de photos très grandes consomme beaucoup de mémoire et les limites PHP ne sont pas modifiables via `php.ini`. Tester avec les plus gros fichiers attendus. Si les traitements expirent ou manquent de mémoire, il faudra réduire `MAX_SOURCE_PIXELS`/les tailles générées, ou passer à un hébergement avec davantage de contrôle (Pro, VPS, Public Cloud ou stockage objet).
+**L'offre PERSO est adaptée à un usage modéré.** Le traitement GD de photos très grandes consomme beaucoup de mémoire et les limites PHP ne sont pas modifiables via `php.ini`. Tester avec les plus gros fichiers attendus. Si les traitements expirent ou manquent de mémoire, il faudra réduire `MAX_SOURCE_PIXELS`/les tailles générées, ou passer à un hébergement avec davantage de contrôle (Pro, VPS, Public Cloud ou stockage objet).
 
 La séparation front/API ne demande pas de modification supplémentaire du code : les URL relatives déjà utilisées (`/api` et `/uploads`) correspondent au routage fourni.
 

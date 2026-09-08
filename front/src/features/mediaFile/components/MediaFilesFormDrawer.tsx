@@ -26,6 +26,7 @@ import { WithIcon } from "@/components/WithIcon"
 import { WithLoading } from "@/components/WithLoading"
 import { cn } from "@/utils/cn"
 import { defaultItemsPerPage } from "@/utils/pagination"
+import { findScrollContainer } from "@/utils/scroll"
 import { getPluralizedText } from "@/utils/text"
 import { invalidateMediaTypeQueries } from "@/features/mediaType/api/fetch"
 import { invalidateUploaderQueries } from "@/features/uploader/api/fetch"
@@ -54,24 +55,59 @@ const UploadChunkParams = () => {
 }
 
 const UploadZone = () => (
-	<UploadDropZone
-		className={cn(
-			"flex flex-col gap-1 justify-center items-center",
-			"border-dashed border border-neutral-400 h-48 rounded-xl",
-			"transition duration-500"
-		)}
-		onDragOverClassName="onDragOver"
-	>
-		<p>Déposez vos fichiers</p>
-		<p className="text-xs mb-2">ou</p>
-		<UploadButton>
-			Sélectionnez des fichiers
-		</UploadButton>
-		<p className="text-xs mt-2 text-neutral-500">
-			Formats autorisés : {getAllowedExtensions().join(", ")}
-		</p>
-	</UploadDropZone>
+	<>
+		<Alert
+			intent="info"
+			title="Si vous rencontrez des soucis lors du téléchargement de vos fichiers, ne paniquez pas !"
+		>
+			<p>N'ayant pas les ressources de Jeff Besos, notre serveur est limité, donc si c'est long... attendez plus longtemps ! (ou recommencez plus tard, ou appelez nous...)</p>
+			<p>Bisous</p>
+		</Alert>
+		<UploadDropZone
+			className={cn(
+				"flex flex-col gap-1 justify-center items-center",
+				"border-dashed border border-neutral-400 sm:min-h-48 p-4 text-center rounded-xl",
+				"transition duration-500"
+			)}
+			onDragOverClassName="onDragOver"
+		>
+			<p className="max-sm:hidden">Déposez vos fichiers</p>
+			<p className="text-xs mb-2 max-sm:hidden">ou</p>
+			<UploadButton>
+				Sélectionnez des fichiers
+			</UploadButton>
+			<p className="text-xs mt-2 text-neutral-500">
+				Formats autorisés : {getAllowedExtensions().join(", ")}
+			</p>
+		</UploadDropZone>
+	</>
 )
+
+type MediaItemProps = {
+	item: BatchItem
+	index: number
+}
+
+const MediaItem = ({
+	item,
+	index,
+}: MediaItemProps) => {
+
+	return (
+		<div
+			className={cn(
+				"relative group rounded-md outline-offset-2 outline-transparent focus-within:outline-2 focus-within:outline-primary",
+				"translate-0 starting:opacity-0 starting:translate-y-4",
+				"transition duration-500"
+			)}
+			style={{
+				transitionDelay: `${15 * (index % defaultItemsPerPage)}ms`,
+			}}
+		>
+			<MediaGridItem {...toMediaGridItem(item)} />
+		</div>
+	)
+}
 
 type PreviewMediaItemProps = {
 	item: BatchItem
@@ -177,6 +213,12 @@ const PreviewZone = () => {
 
 	useBatchAddListener(batch => {
 		setItems(items => items.concat(batch.items))
+
+		const element = document.getElementById("PreviewZone")
+
+		if (element) {
+			findScrollContainer(element).scroll({ top: element.offsetTop, behavior: "smooth" })
+		}
 	})
 
 	useItemAbortListener(item => {
@@ -194,7 +236,7 @@ const PreviewZone = () => {
 	})
 
 	const isLoading = state === "added" && completed > 0
-	const isSuccess = state === "added" && completed === 100
+	const isFinished = state === "added" && completed === 100
 
 	const totals = useMemo(
 		() => (
@@ -209,6 +251,7 @@ const PreviewZone = () => {
 
 	return (
 		<Card
+			id="PreviewZone"
 			isOutlined
 			as="section"
 			className={cn(
@@ -256,11 +299,11 @@ const PreviewZone = () => {
 					disabled={items.length === 0}
 					intent="primary"
 					className="grow"
-					readOnly={isLoading || isSuccess}
+					readOnly={isLoading || isFinished}
 				>
 					<WithLoading
 						isLoading={isLoading}
-						isSuccess={isSuccess}
+						isSuccess={isFinished}
 					>
 						<WithIcon after="chevron-right">
 							Envoyer
@@ -278,6 +321,10 @@ type ThanksZoneProps = {
 }
 
 const ThanksZone = ({ uploader, items }: ThanksZoneProps) => {
+	const totals = getBatchItemCount({ items })
+	const errorItems = items.filter(({ state }) => state === FILE_STATES.ERROR)
+	const errorTotals = getBatchItemCount({ items: errorItems })
+
 	return (
 		<Card isOutlined>
 			<CardItem
@@ -296,7 +343,7 @@ const ThanksZone = ({ uploader, items }: ThanksZoneProps) => {
 					} pour ${
 						getPluralizedText(items.length, "tes trop belles", "ta trop belle")
 					} ${
-						Object.entries(getBatchItemCount({ items })).flatMap(([type, total]) => (
+						Object.entries(totals).flatMap(([type, total]) => (
 							total > 0
 								? [getMediaTypePluralizedLabel(items.length, type)]
 								: []
@@ -322,7 +369,28 @@ const ThanksZone = ({ uploader, items }: ThanksZoneProps) => {
 					/>
 				</p>
 			</CardItem>
-			<CardItem as="footer" isIso className="flex">
+			<CardItem as="footer" isIso className="flex flex-col">
+				{errorItems.length > 0 && (
+					<Alert
+						title={
+							`Problème avec ${Object.entries(errorTotals).flatMap(([type, total]) => (
+								total > 0
+									? [getMediaTypePluralizedNumberedLabel(total, type)]
+									: []
+							)).join(", ")}`
+						}
+					>
+						<MediaGridContainer>
+							{errorItems.map((item, index) => (
+								<MediaItem
+									key={item.id}
+									item={item}
+									index={index}
+								/>
+							))}
+						</MediaGridContainer>
+					</Alert>
+				)}
 				<Button
 					type="button"
 					onClick={() => useDialog.getState().close()}
@@ -349,10 +417,10 @@ const MediaFilesUploaderFormFields = () => (
 export const MediaFilesFormDrawer = () => {
 	const { data: dataUploaders } = useQuery(uploadersQueryOptions())
 
-	const { mutateAsync, data, error, reset } = useMutation(addUploaderOptions())
+	const { mutateAsync, data: dataUploader, error, reset } = useMutation(addUploaderOptions())
 
 	const [uploaderId, setUploaderId] = useState<number | undefined>()
-	const [successBatch, setSuccessBatch] = useState<Batch | undefined>()
+	const [dataBatch, setDataBatch] = useState<Pick<Batch, "items" | "state"> | undefined>()
 
 	const alreadyExists = error && error.message === "Ce nom est déjà utilisé."
 	const existingUploaderId = alreadyExists && error.cause.data.uploaderId
@@ -362,19 +430,17 @@ export const MediaFilesFormDrawer = () => {
 	useEffect(
 		() => {
 			/* eslint-disable react-hooks/set-state-in-effect */
-			if (!data) {
+			if (!dataUploader) {
 				setUploaderId(undefined)
 
 				return
 			}
 
-			setUploaderId(data.id)
+			setUploaderId(dataUploader.id)
 			/* eslint-enable react-hooks/set-state-in-effect */
 		},
-		[data]
+		[dataUploader]
 	)
-
-	// TODO Add swipeDown to close
 
 	return (
 		<>
@@ -400,8 +466,8 @@ export const MediaFilesFormDrawer = () => {
 									</WithIcon>
 								</CardButton>
 							</Card>
-							{successBatch
-								? <ThanksZone uploader={uploader} items={successBatch.items} />
+							{dataBatch
+								? <ThanksZone uploader={uploader} items={dataBatch.items} />
 								: (
 									<ChunkedUploady
 										autoUpload={false}
@@ -413,10 +479,10 @@ export const MediaFilesFormDrawer = () => {
 										}}
 										accept={getAllowedMimeTypes().join(",")}
 										listeners={{
-											[UPLOADER_EVENTS.BATCH_FINALIZE]: async batch => {
-												if (batch.total > 0) {
+											[UPLOADER_EVENTS.BATCH_FINALIZE]: async (batch: Batch) => {
+												if (batch.items.length > 0) {
 													await sleep(500)
-													setSuccessBatch(batch)
+													setDataBatch(batch)
 												}
 											},
 										}}

@@ -19,7 +19,7 @@ export const Drawer = ({ isOpen = true, close, children, containerClassName, cla
 		<Dialog
 			{...props}
 			open={isOpen}
-			onClose={close}
+			onClose={() => null}
 			className={cn(
 				"Dialog Drawer relative z-40",
 				containerClassName,
@@ -27,9 +27,8 @@ export const Drawer = ({ isOpen = true, close, children, containerClassName, cla
 		>
 			<DialogBackdrop
 				transition
-				className="fixed inset-0 bg-neutral-200/90 is-horizontal:bg-white/80 backdrop-blur-xl transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in cursor-pointer"
-			>
-			</DialogBackdrop>
+				className="fixed inset-0 bg-neutral-200/90 is-horizontal:bg-white/80 backdrop-blur-xl transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+			/>
 
 			<div className="pointer-events-none fixed inset-0 overflow-hidden">
 				<div className="fixed inset-0 top-8 bottom-0 is-horizontal:inset-x-[2.5vw] is-horizontal:top-[5vw] flex justify-center max-w-full">

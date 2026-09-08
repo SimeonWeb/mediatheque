@@ -18,6 +18,7 @@ export const allowedMimeType = [
 	"video/mp4",
 	"video/ogg",
 	"video/webm",
+	"video/quicktime",
 ] as const
 
 export type AllowedMimeType = TypeFromArrayConst<typeof allowedMimeType>

@@ -33,7 +33,7 @@ export const AudioPlayerGlobal = () => {
 					<p className="starting:opacity-0 starting:-rotate-6 starting:scale-120 transition delay-1300 duration-400">
 						<button
 							onClick={() => useDialog.getState().close()}
-							className="rounded-full outline-2 outline-offset-2 outline-transparent focus-visible:outline-primary/80"
+							className="cursor-pointer rounded-full outline-2 outline-offset-2 outline-transparent focus-visible:outline-primary/80"
 						>
 							<Icon name="ink-pad" className="size-36 text-primary" label="Marie et Simon" />
 						</button>

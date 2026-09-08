@@ -47,6 +47,7 @@ final readonly class UploadFileProcessor implements ProcessorInterface
         'video/mp4',
         'video/ogg',
         'video/webm',
+        'video/quicktime',
     ];
 
     public function __construct(
