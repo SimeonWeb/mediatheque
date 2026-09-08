@@ -1,0 +1,24 @@
+info:
+  name: Add
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{host}}/media_file_meta"
+  body:
+    type: json
+    data: |-
+      {
+        "mediaFileId": 165,
+        "title": "deezerUrl",
+        "value": "https://link.deezer.com/s/34jdaiTOYH3HPFmsxnXWK"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

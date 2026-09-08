@@ -2,13 +2,22 @@
 
 namespace App\Service;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+
 final class FileCreationDateExtractor
 {
     private const array DATE_CANDIDATES = [
-        ['EXIF', 'DateTimeOriginal', 'OffsetTimeOriginal'],
-        ['EXIF', 'DateTimeDigitized', 'OffsetTimeDigitized'],
-        ['IFD0', 'DateTime', 'OffsetTime'],
+        ['EXIF', 'DateTimeOriginal', 'OffsetTimeOriginal', 'UndefinedTag:0x9011'],
+        ['EXIF', 'DateTimeDigitized', 'OffsetTimeDigitized', 'UndefinedTag:0x9012'],
+        ['IFD0', 'DateTime', 'OffsetTime', 'UndefinedTag:0x9010'],
     ];
+
+    private readonly \DateTimeZone $defaultTimezone;
+
+    public function __construct(#[Autowire('%env(APP_TIMEZONE)%')] string $defaultTimezone)
+    {
+        $this->defaultTimezone = new \DateTimeZone($defaultTimezone);
+    }
 
     public function extract(
         string $path,
@@ -24,14 +33,17 @@ final class FileCreationDateExtractor
             return null;
         }
 
-        foreach (self::DATE_CANDIDATES as [$section, $dateKey, $offsetKey]) {
+        foreach (self::DATE_CANDIDATES as [$section, $dateKey, $offsetKey, $rawOffsetKey]) {
             $value = $metadata[$section][$dateKey] ?? null;
             if (!is_string($value)) {
                 continue;
             }
 
-            $offset = $metadata[$section][$offsetKey] ?? $metadata['EXIF'][$offsetKey] ?? null;
-            $date = $this->parse($value, is_string($offset) ? $offset : null, $uploadedAt->getTimezone());
+            $offset = $metadata[$section][$offsetKey]
+                ?? $metadata['EXIF'][$offsetKey]
+                ?? $metadata['EXIF'][$rawOffsetKey]
+                ?? null;
+            $date = $this->parse($value, is_string($offset) ? $offset : null);
 
             if (null !== $date && $this->isPlausible($date, $uploadedAt)) {
                 return $date->setTimezone(new \DateTimeZone('UTC'));
@@ -44,14 +56,13 @@ final class FileCreationDateExtractor
     private function parse(
         string $value,
         ?string $offset,
-        \DateTimeZone $fallbackTimezone,
     ): ?\DateTimeImmutable {
         $offset = null !== $offset && 1 === preg_match('/^[+-]\d{2}:\d{2}$/', $offset) ? $offset : null;
         $format = null === $offset ? '!Y:m:d H:i:s' : '!Y:m:d H:i:sP';
         $date = \DateTimeImmutable::createFromFormat(
             $format,
             trim($value).($offset ?? ''),
-            null === $offset ? $fallbackTimezone : null,
+            null === $offset ? $this->defaultTimezone : null,
         );
         $errors = \DateTimeImmutable::getLastErrors();
 

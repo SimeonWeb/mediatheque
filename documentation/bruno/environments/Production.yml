@@ -1,0 +1,11 @@
+name: Production
+variables:
+  - name: host
+    value: https://les-chouchouteries.niiniy.fr/api
+    description: ""
+  - name: uploader_id
+    value: "1"
+    description: ""
+  - name: token
+    value: "{{process.env.TOKEN}}"
+    description: ""

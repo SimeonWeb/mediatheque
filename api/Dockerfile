@@ -6,7 +6,7 @@ RUN apt-get update \
     && docker-php-ext-configure gd --with-jpeg --with-webp \
     && docker-php-ext-install exif gd pdo_mysql \
     && a2enmod rewrite proxy proxy_http proxy_wstunnel \
-    && printf 'upload_max_filesize=10M\npost_max_size=11M\n' > /usr/local/etc/php/conf.d/uploads.ini
+    && printf 'upload_max_filesize=10M\npost_max_size=11M\nmax_execution_time=300\n' > /usr/local/etc/php/conf.d/uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf

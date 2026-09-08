@@ -6,14 +6,14 @@ import { cn } from "@/utils/cn"
 const headingVariants = cva(
 	[
 		"Heading",
-		"text-neutral-highlight",
+		"text-primary",
 		"font-bold",
 	],
 	{
 		variants: {
 			level: {
-				h1: "font-display text-xl md:text-2xl leading-tight",
-				h2: "font-display text-lg md:text-xl leading-tight",
+				h1: "text-xl md:text-2xl leading-tight",
+				h2: "text-lg md:text-xl leading-tight",
 				h3: "text-xl leading-tight",
 				h4: "text-lg leading-tight",
 				h5: "text-base leading-tight",

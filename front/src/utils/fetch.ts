@@ -1,40 +1,56 @@
 import { useAuth } from "@/stores/auth"
 
+import type { ApiCursorList, ApiList } from "./types/api"
 import { defaultItemsPerPage, defaultPage } from "./pagination"
-import type { ApiList } from "./types/api"
 import type { Method } from "./types/fetch"
 import { defaultErrorMessage } from "./default"
+
+export const getFetchUrl = (input: `/${string}`) => {
+	const apiUrl: string = import.meta.env.VITE_API_URL
+
+	if (input.startsWith("/api/") && (apiUrl === "/api" || apiUrl.endsWith("/api"))) {
+		return `${apiUrl.slice(0, -4)}${input}`
+	}
+
+	return `${apiUrl}${input}`
+}
+
+export const getFetchHeaders = () => {
+	const { token } = useAuth.getState()
+
+	return {
+		Accept: "application/ld+json, application/json",
+		"Authorization": token ? `Bearer ${token}` : "",
+	}
+}
 
 export const fetchWithContext = async (
 	input: `/${string}`,
 	init?: RequestInit,
 ) => {
-	const { token } = useAuth.getState()
-
 	const response = await fetch(
-		`${import.meta.env.VITE_API_URL}${input}`,
+		getFetchUrl(input),
 		{
 			...init,
 			headers: {
-				Accept: "application/ld+json",
-				"Authorization": token ? `Bearer ${token}` : "",
+				...getFetchHeaders(),
 				...init?.headers,
 			},
 		},
 	)
 
 	if (!response.ok) {
-		if (response.headers.get("content-type") !== "application/ld+json") {
+		if (!response.headers.get("content-type")?.match(/application\/.+json/)) {
 			throw new Error(response.statusText || defaultErrorMessage)
 		}
 
 		const json = await response.json()
 
 		if (Array.isArray(json)) {
-			throw new Error(json[0].detail || json[0].title || json[0].message || defaultErrorMessage)
+			throw new Error(json[0].detail || json[0].title || json[0].message || defaultErrorMessage, { cause: json[0] })
 		}
 
-		throw new Error(json.detail || json.title || json.message || defaultErrorMessage)
+		throw new Error(json.detail || json.title || json.message || defaultErrorMessage, { cause: json })
 	}
 
 	return response
@@ -61,7 +77,7 @@ export const fetchToJsonWithPagination = async <D>(
 	}
 
 	const { "@id": current } = data.view
-	const { searchParams } = new URL(window.location.origin + current)
+	const { searchParams } = new URL(`${window.location.origin}${current}`)
 
 	const page = Number(searchParams.get("page")) || defaultPage
 	const itemsPerPage = Number(searchParams.get("itemsPerPage")) || defaultItemsPerPage
@@ -78,6 +94,26 @@ export const fetchToJsonWithPagination = async <D>(
 			lastPage,
 			nextPage,
 			previousPage,
+		},
+		items: data.member,
+	}
+}
+
+export const fetchToJsonWithCursorPagination = async <D>(
+	input: `/${string}`,
+	init?: RequestInit,
+): Promise<ApiCursorList<D>> => {
+	const response = await fetchWithContext(input, init)
+	const data = await response.json()
+
+	if (data["@type"] !== "Collection") {
+		throw new Error("No collection")
+	}
+
+	return {
+		pagination: {
+			next: data.view?.next ?? null,
+			previous: data.view?.previous ?? null,
 		},
 		items: data.member,
 	}
@@ -137,7 +173,7 @@ export const toFormData = (data: Record<string, FormDataRaw | FormDataRaw[]>) =>
 
 		if (Array.isArray(value)) {
 			for (const arrayValue of value) {
-				formData.append(field, parseValue(arrayValue))
+				formData.append(`${field}[]`, parseValue(arrayValue))
 			}
 		} else {
 			formData.append(field, parseValue(value))

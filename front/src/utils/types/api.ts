@@ -26,6 +26,14 @@ export type ApiList<D> = {
 	items: D[]
 }
 
+export type ApiCursorList<D> = {
+	pagination: {
+		next: `/${string}` | null
+		previous: `/${string}` | null
+	}
+	items: D[]
+}
+
 export type ListQueryParams<P>
 	= PaginationQueryParams
 	& P

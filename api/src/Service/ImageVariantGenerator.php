@@ -24,6 +24,10 @@ final class ImageVariantGenerator
             throw new \RuntimeException('Le format de l’image ne peut pas être traité.');
         }
 
+        $source = $this->applyExifOrientation($source, $sourcePath, $imageInfo[2]);
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+
         $maxSize = max(1, $size);
         $ratio = min($maxSize / $sourceWidth, $maxSize / $sourceHeight, 1);
         $targetWidth = max(1, (int) round($sourceWidth * $ratio));
@@ -59,5 +63,43 @@ final class ImageVariantGenerator
             @unlink($targetPath);
             throw new \RuntimeException('La variante de l’image n’a pas pu être écrite.');
         }
+    }
+
+    private function applyExifOrientation(\GdImage $source, string $sourcePath, int $imageType): \GdImage
+    {
+        if (IMAGETYPE_JPEG !== $imageType || !function_exists('exif_read_data')) {
+            return $source;
+        }
+
+        $metadata = @exif_read_data($sourcePath, 'IFD0', true, false);
+        $orientation = is_array($metadata) ? (int) ($metadata['IFD0']['Orientation'] ?? 1) : 1;
+
+        if (in_array($orientation, [2, 4, 5, 7], true)) {
+            $flipMode = in_array($orientation, [2, 5], true) ? IMG_FLIP_HORIZONTAL : IMG_FLIP_VERTICAL;
+            if (!imageflip($source, $flipMode)) {
+                imagedestroy($source);
+                throw new \RuntimeException('L’orientation de l’image n’a pas pu être appliquée.');
+            }
+        }
+
+        $angle = match ($orientation) {
+            3, 4 => 180,
+            5, 8 => 90,
+            6, 7 => -90,
+            default => 0,
+        };
+
+        if (0 === $angle) {
+            return $source;
+        }
+
+        $oriented = imagerotate($source, $angle, 0);
+        imagedestroy($source);
+
+        if (false === $oriented) {
+            throw new \RuntimeException('L’orientation de l’image n’a pas pu être appliquée.');
+        }
+
+        return $oriented;
     }
 }

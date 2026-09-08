@@ -35,7 +35,7 @@ export const WithLoading = ({ isLoading, isSuccess, children, containerClassName
 					"transition-opacity duration-150",
 					"pointer-events-none",
 					{
-						"opacity-0": !isLoading,
+						"opacity-0": !isLoading || isSuccess,
 					},
 				)}
 			/>

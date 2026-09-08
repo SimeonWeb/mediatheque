@@ -1,4 +1,4 @@
-import { fetchOptions, fetchToJson, fetchToJsonWithPagination, toSearchParams, withSearchParams } from "@/utils/fetch"
+import { fetchOptions, fetchToJson, fetchToJsonWithCursorPagination, toSearchParams, withSearchParams } from "@/utils/fetch"
 import type { ListQueryParams } from "@/utils/types/api"
 import { queryClient } from "@/utils/queryClient"
 
@@ -25,10 +25,14 @@ export const getMediaFile = (id: MediaFile["id"], init?: RequestInit) => (
 )
 
 export const getMediaFiles = (params: ListQueryParams<MediaFilesQueryFilters>, init?: RequestInit) => (
-	fetchToJsonWithPagination<MediaFile>(
+	fetchToJsonWithCursorPagination<MediaFile>(
 		withSearchParams("/media_files", toSearchParams(params)),
 		init
 	)
+)
+
+export const getMediaFilesPage = (url: `/${string}`, init?: RequestInit) => (
+	fetchToJsonWithCursorPagination<MediaFile>(url, init)
 )
 
 export const addMediaFile = (formData: AddMediaFileTransformedValues) => (

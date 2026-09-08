@@ -1,6 +1,6 @@
 import type { OmitKeyof, UseQueryOptions } from "@tanstack/react-query"
 
-import type { ApiList, ListQueryParams } from "./api"
+import type { ApiCursorList, ApiList, ListQueryParams } from "./api"
 
 export type QueryOptions<
 	TData = unknown,
@@ -15,6 +15,14 @@ export type ListQueryOptions<
 	TParams extends Record<string, unknown> = Record<string, unknown>,
 > = OmitKeyof<
 	UseQueryOptions<ApiList<TData>, Error, ApiList<TData>, (string | ListQueryParams<TParams>)[]>,
+	"queryKey" | "queryFn"
+>
+
+export type CursorListQueryOptions<
+	TData = unknown,
+	TParams extends Record<string, unknown> = Record<string, unknown>,
+> = OmitKeyof<
+	UseQueryOptions<ApiCursorList<TData>, Error, ApiCursorList<TData>, (string | ListQueryParams<TParams>)[]>,
 	"queryKey" | "queryFn"
 >
 

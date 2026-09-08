@@ -1,27 +1,34 @@
-import type { CellData, Column, Row, RowData, TableFeatures } from "@tanstack/react-table"
+import type { Column, Row, RowData } from "@tanstack/react-table"
 
-import type { NavigationElement, NavigationElementInteractive } from "./navigation"
-// import type { Icons } from "./icons"
+import type { ButtonProps, ExternalLinkButtonProps, LinkButtonProps } from "@/components/Button"
+
+import type { Icons } from "./icons"
+import type { NavigationElement } from "./navigation"
 
 declare module "@tanstack/react-table" {
-	interface ColumnMeta<in out TFeatures extends TableFeatures, in out TData extends RowData, TValue extends CellData = unknown> {
-		className?: string | ((column: Column<TFeatures, TData, TValue>) => string)
-		responsiveClassName?: string | ((column: Column<TFeatures, TData, TValue>) => string)
+	interface ColumnMeta<TData extends RowData, TValue> {
+		className?: string | ((column: Column<TData, TValue>) => string)
+		responsiveClassName?: string | ((column: Column<TData, TValue>) => string)
 		// intent?: string | ((column: Column<TData, TValue>) => string)
 	}
 }
 
-export type RowActionsMethod<in out TFeatures extends TableFeatures, in out TData extends RowData> = (row: Row<TFeatures, TData>) => [
+export type RowActionsMethod<D extends RowData> = (row: Row<D>) => [
 	(
-		NavigationElementInteractive
-		// & {
-		// 	icon?: Icons
-		// }
+		(
+			ButtonProps
+			| LinkButtonProps
+			| ExternalLinkButtonProps
+		)
+		& {
+			icon?: Icons
+		}
 	)[],
 	NavigationElement[],
 ]
 
-export type RowActionsProps<in out TFeatures extends TableFeatures, in out TData extends RowData> = {
-	actions?: RowActionsMethod<TFeatures, TData>
-	row: Row<TFeatures, TData>
+export type RowActionsProps<D extends RowData> = {
+	actions?: RowActionsMethod<D>
+	row: Row<D>
+	isNarrow?: boolean
 }

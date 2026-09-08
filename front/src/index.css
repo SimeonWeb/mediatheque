@@ -1,7 +1,24 @@
 @import "tailwindcss";
 @theme {
 	--color-primary: #1d5a85;
+	--color-primary-highlight: color-mix(in srgb, var(--color-primary), #fff 15%);
 	--color-accent: #ffd403;
+	--color-accent-highlight: color-mix(in srgb, var(--color-accent), #fff 15%);
+
+	--color-error: #C20505;
+	--color-error-highlight: color-mix(in srgb, var(--color-error), #fff 15%);
+	--color-error-support: color-mix(in srgb, var(--color-error), #fff 80%);
+	--color-error-support-highlight: color-mix(in srgb, var(--color-error), #fff 70%);
+
+	--color-warning: #E98000;
+	--color-warning-highlight: color-mix(in srgb, var(--color-warning), #fff 20%);
+	--color-warning-support: color-mix(in srgb, var(--color-warning), #fff 80%);
+	--color-warning-support-highlight: color-mix(in srgb, var(--color-warning), #fff 70%);
+
+	--color-info: #20ADD9;
+	--color-info-highlight: color-mix(in srgb, var(--color-info), #fff 20%);
+	--color-info-support: color-mix(in srgb, var(--color-info), #fff 80%);
+	--color-info-support-highlight: color-mix(in srgb, var(--color-info), #fff 70%);
 
 	--text-2xs: .625rem;
 	--text-3xs: .5rem;
@@ -10,19 +27,71 @@
 
 	--drop-shadow-px: 0 1px 0 #fff;
 
+	--cursor-default: url(/assets/cursor-default.svg), default;
 	--cursor-left: url(/assets/cursor-left.svg), pointer;
 	--cursor-right: url(/assets/cursor-right.svg), pointer;
 	--cursor-pointer: url(/assets/cursor-pointer.svg), pointer;
+
+	--font-sans: "Readex Pro", sans-serif;
+	--font-handwriting: "Gochi Hand", cursive;
+}
+
+@theme {
+  --animate-waveform-bar: waveformBar 1s ease-in-out infinite;
+	@keyframes waveformBar {
+		0%,
+		100% {
+			transform-origin: center center;
+			transform: scaleY(.25);
+		}
+		20% {
+			transform: scaleY(.75);
+		}
+		50% {
+			transform: scaleY(.5);
+		}
+		80% {
+			transform: scaleY(1);
+		}
+	}
+
+  --animate-waveform-bar-low: waveformBarLow 1s ease-in-out infinite;
+	@keyframes waveformBarLow {
+		0%,
+		100% {
+			transform-origin: center center;
+			transform: scaleY(.1);
+		}
+		20% {
+			transform: scaleY(.4);
+		}
+		55% {
+			transform: scaleY(.8);
+		}
+		75% {
+			transform: scaleY(.65);
+		}
+	}
+}
+
+.onDragOver {
+	@apply border-primary border-solid border-2 bg-primary/5;
 }
 
 @custom-variant is-vertical {
-	@media (max-aspect-ratio: 2/3) {
+	@media (max-aspect-ratio: 2/2.8) {
 		@slot;
 	}
 }
 
 @custom-variant is-horizontal {
-	@media (min-aspect-ratio: 2/3) {
+	@media (min-aspect-ratio: 2/2.8) {
+		@slot;
+	}
+}
+
+@custom-variant is-horizontal-tight {
+	@media (min-aspect-ratio: 2/1) {
 		@slot;
 	}
 }

@@ -1,0 +1,18 @@
+<?php
+
+namespace App\Dto;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+final class CreateMediaFileMetaInput
+{
+    #[Assert\Positive]
+    public int $mediaFileId = 0;
+
+    #[Assert\NotBlank(normalizer: 'trim')]
+    #[Assert\Length(max: 255, normalizer: 'trim')]
+    public string $title = '';
+
+    #[Assert\NotNull]
+    public ?string $value = null;
+}

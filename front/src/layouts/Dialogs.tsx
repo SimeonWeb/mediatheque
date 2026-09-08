@@ -1,23 +1,23 @@
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { type DefaultError, type MutationOptions, useMutation } from "@tanstack/react-query"
-import { type ReactNode, useEffect, useReducer, useState } from "react"
 
 import { Card, CardItem } from "@/components/Card"
 import { Dialog as DialogBase, type DialogProps as DialogBaseProps, DialogChildren } from "@/components/Dialog"
+import { type TouchNavigationEvents, useCardinalNavigation } from "@/utils/useCardinalNavigation"
 import { defaultCloseLabel, defaultConfirmLabel, defaultErrorMessage, defaultUndoLabel } from "@/utils/default"
 import { Alert } from "@/components/Alert"
-import { Badge } from "@/components/Badge"
 import { Button } from "@/components/Button"
 import { DialogTitle } from "@headlessui/react"
 import { Group } from "@/components/Group"
 import { Heading } from "@/components/Heading"
-import { Icon } from "@/components/Icon"
 import type { MediaFile } from "@/features/mediaFile/api/types"
-import { WithIcon } from "@/components/WithIcon"
+import { PreviewItem } from "@/components/PreviewItem"
 import { WithLoading } from "@/components/WithLoading"
 import { cn } from "@/utils/cn"
-import { getFileUrl } from "@/utils/file"
+import { isPlaylist } from "@/features/mediaFile/utils/helpers"
 import { sleep } from "@/utils/sleep"
-import { useMediaFilesContext } from "@/features/mediaFile/utils/useMediaFiles"
+import { useDialog } from "@/stores/dialog"
+import { useFiles } from "@/features/mediaFile/utils/store"
 
 export interface DialogProps extends DialogBaseProps {
 	title: ReactNode
@@ -27,23 +27,21 @@ export interface DialogProps extends DialogBaseProps {
 export const Dialog = ({ title, button = defaultCloseLabel, children, ...props }: DialogProps) => {
 	return (
 		<DialogBase {...props}>
-			<Card className="text-sm">
-				<CardItem isIso className="flex flex-col gap-4 md:gap-4 text-center max-w-sm">
-					<DialogTitle as={Heading} like="h6">
-						{title}
-					</DialogTitle>
+			<Group className="flex-col items-center w-90 max-w-screen p-6 text-center text-2xl" size="xl">
+				<DialogTitle as={Heading} like="h2">
+					{title}
+				</DialogTitle>
+				<Group className="flex-col font-handwriting" size="xl">
 					<DialogChildren close={props.close} children={children} />
-				</CardItem>
-				<Group isNarrow size="px" className="bg-primary-1">
-					<Button
-						onClick={props.close}
-						intent="text"
-						className="bg-primary-3 flex-1 rounded-none"
-					>
-						{button}
-					</Button>
 				</Group>
-			</Card>
+
+				<Button
+					onClick={props.close}
+					intent="text"
+				>
+					{button}
+				</Button>
+			</Group>
 		</DialogBase>
 	)
 }
@@ -235,50 +233,108 @@ export interface PreviewProps extends DialogBaseProps {
 	onItem?: (item: MediaFile, index: number, isLast: boolean) => void
 }
 
-export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
-	const { files } = useMediaFilesContext()
+export const Preview = ({ index, onItem, ref, ...props }: PreviewProps) => {
+	const files = useFiles(state => state.items)
+
+	const dialogRef = useRef<HTMLDivElement>(null)
+	const mergedRef = useCallback(
+		(element: HTMLDivElement | null) => {
+			dialogRef.current = element
+
+			if (typeof ref === "function") {
+				ref(element)
+			} else if (ref) {
+				ref.current = element
+			}
+		},
+		[ref]
+	)
 
 	const [currentIndex, setCurrentIndex] = useState(index)
+	const [style, setStyle] = useState<CSSProperties>()
 
-	const {
-		paths,
-		originalName,
-		mimeType,
-		extension,
-	} = files[currentIndex]
-
-	useEffect(
+	const handleLeft = useCallback(
 		() => {
-			const handleKeydown = ({ key }: KeyboardEvent) => {
-				switch (key) {
-					case "ArrowLeft":
-						setCurrentIndex(currentIndex => {
-							if (currentIndex === 0) {
-								return currentIndex
-							}
-
-							return currentIndex - 1
-						})
-						break
-					case "ArrowRight":
-						setCurrentIndex(currentIndex => {
-							if (currentIndex === files.length - 1) {
-								return currentIndex
-							}
-							return currentIndex + 1
-						})
-						break
+			setCurrentIndex(currentIndex => {
+				if (currentIndex === 0) {
+					return currentIndex
 				}
+
+				return currentIndex - 1
+			})
+			setStyle(undefined)
+		},
+		[]
+	)
+	const handleTouchMove = useCallback<TouchNavigationEvents["onTouchMove"]>(
+		({ y, min }) => {
+			if (isPlaylist(files[currentIndex])) {
+				return
 			}
 
-			document.addEventListener("keydown", handleKeydown)
+			const dialogElement = dialogRef.current
 
-			return () => {
-				document.removeEventListener("keydown", handleKeydown)
+			if (!dialogElement) {
+				return
 			}
+
+			const backdrop = dialogElement.querySelector(".DialogBackdrop") as HTMLDivElement | undefined
+			const panel = dialogElement.querySelector(".DialogPanel") as HTMLDivElement | undefined
+
+			if (!backdrop || !panel) {
+				return
+			}
+
+			if (y < min) {
+				return
+			}
+
+			const maxPx = 150
+			const ratio = (y - min) / maxPx
+
+			// backdrop: opacity-0
+			// panel: opacity-0 scale-80
+			const opacityRange = 1
+			const scaleRange = .2
+
+			const opacity = `${1 - opacityRange * ratio}`
+			const scale = `${1 - scaleRange * ratio}`
+
+			backdrop.style.setProperty("opacity", opacity)
+			panel.style.setProperty("opacity", opacity)
+			panel.style.setProperty("scale", scale)
+		},
+		[currentIndex, files]
+	)
+	const handleRight = useCallback(
+		() => {
+			setCurrentIndex(currentIndex => {
+				if (currentIndex === files.length - 1) {
+					return currentIndex
+				}
+				return currentIndex + 1
+			})
+			setStyle(undefined)
 		},
 		[files]
 	)
+	const handleSwipeClose = useCallback(
+		() => {
+			if (isPlaylist(files[currentIndex])) {
+				return
+			}
+
+			useDialog.getState().close()
+		},
+		[currentIndex, files]
+	)
+
+	useCardinalNavigation({
+		onLeft: handleLeft,
+		onRight: handleRight,
+		onTouchMove: handleTouchMove,
+		onSwipeBottom: handleSwipeClose,
+	})
 
 	useEffect(
 		() => {
@@ -288,75 +344,29 @@ export const Preview = ({ index, onItem, ...props }: PreviewProps) => {
 		[currentIndex]
 	)
 
+	const currentFile = files[currentIndex]
+
 	return (
-		<DialogBase {...props} className={cn("max-w-none w-full", props.className)}>
-			<DialogTitle as={Group} className="flex-col items-center justify-center">
-				<button
-					type="button"
-					className="flex focusable rounded cursor-pointer max-w-[calc(95vw)] max-h-[calc(100vh-5vw)]"
-					onClick={props.close}
-					aria-label={defaultCloseLabel}
-				>
-					{mimeType.startsWith("image/")
-						? (
-							<img
-								src={getFileUrl(paths.medium)}
-								srcSet={`${getFileUrl(paths.medium)} 1080w, ${getFileUrl(paths.full)} 1920w`}
-								alt={originalName}
-								className="w-full h-full object-contain rounded"
-							/>
-						)
-						: (
-							<div className="flex flex-col gap-4 items-center justify-center text-primary">
-								<div className="size-20 grid col-span-1 row-span-1 justify-center items-center">
-									<Icon name="document" className="col-start-1 row-start-1 size-full" />
-									<span className="col-start-1 row-start-1 text-white/80 text-base pt-5 uppercase">{extension}</span>
-								</div>
-								<Badge>{originalName}</Badge>
-							</div>
-						)
-					}
-				</button>
-			</DialogTitle>
-			{currentIndex > -1 && !!files && (
-				<>
-					<button
-						onClick={() => {
-							setCurrentIndex(currentIndex - 1)
-						}}
-						className={cn(
-							"flex items-center justify-start p-[2.5vw]",
-							"absolute inset-0 right-3/4 z-50",
-							"cursor-left",
-							{
-								"hidden": currentIndex === 0,
-							}
-						)}
-					>
-						<WithIcon before="chevron-left" containerClassName="is-horizontal:sr-only grow-0 text-white text-shadow-2xl" className="sr-only">
-							Précédent
-						</WithIcon>
-					</button>
-					<button
-						onClick={() => {
-							setCurrentIndex(currentIndex + 1)
-						}}
-						aria-label="Suivant"
-						className={cn(
-							"flex items-center justify-end p-[2.5vw]",
-							"absolute inset-0 left-3/4 z-50",
-							"cursor-right",
-							{
-								"hidden": currentIndex === files.length - 1,
-							}
-						)}
-					>
-						<WithIcon before="chevron-right" containerClassName="is-horizontal:sr-only grow-0 text-white text-shadow-2xl" className="sr-only">
-							Suivant
-						</WithIcon>
-					</button>
-				</>
+		<DialogBase
+			{...props}
+			ref={mergedRef}
+			className={cn(
+				"pointer-events-none w-full h-full",
+				props.className
 			)}
+		>
+			<PreviewItem
+				item={currentFile}
+				style={style}
+				navigationEvents={{
+					onPrevious: currentIndex > 0
+						? handleLeft
+						: undefined,
+					onNext: currentIndex < files.length - 1
+						? handleRight
+						: undefined,
+				}}
+			/>
 		</DialogBase>
 	)
 }

@@ -6,10 +6,11 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Dto\CreateUploaderInput;
 use App\Entity\Uploader;
+use App\Exception\UploaderAlreadyExistsException;
 use App\Repository\UploaderRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -22,6 +23,7 @@ final readonly class CreateUploaderProcessor implements ProcessorInterface
         private SluggerInterface $slugger,
         private UploaderRepository $repository,
         private EntityManagerInterface $entityManager,
+        private ManagerRegistry $managerRegistry,
     ) {
     }
 
@@ -39,8 +41,8 @@ final readonly class CreateUploaderProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Le slug généré est invalide.');
         }
 
-        if (null !== $this->repository->findOneBy(['slug' => $slug])) {
-            throw new ConflictHttpException('Ce nom est déjà utilisé.');
+        if (null !== $existingUploader = $this->repository->findOneBy(['slug' => $slug])) {
+            throw new UploaderAlreadyExistsException($existingUploader->getId());
         }
 
         $uploader = new Uploader($name, $slug);
@@ -49,7 +51,14 @@ final readonly class CreateUploaderProcessor implements ProcessorInterface
             $this->entityManager->persist($uploader);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException $exception) {
-            throw new ConflictHttpException('Ce nom est déjà utilisé.', $exception);
+            $entityManager = $this->managerRegistry->resetManager();
+            $existingUploader = $entityManager->getRepository(Uploader::class)->findOneBy(['slug' => $slug]);
+
+            if ($existingUploader instanceof Uploader) {
+                throw new UploaderAlreadyExistsException($existingUploader->getId(), $exception);
+            }
+
+            throw $exception;
         }
 
         return $uploader;
