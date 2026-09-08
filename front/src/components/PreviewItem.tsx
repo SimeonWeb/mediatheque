@@ -1,4 +1,4 @@
-import { type CSSProperties, type PropsWithChildren, type PropsWithClassName, useRef, useState } from "react"
+import { type CSSProperties, type PropsWithChildren, type PropsWithClassName } from "react"
 import { DialogTitle } from "@headlessui/react"
 import { useQuery } from "@tanstack/react-query"
 
@@ -13,15 +13,16 @@ import { getFileUrl } from "@/utils/file"
 import { getPluralizedText } from "@/utils/text"
 import { getTotalTime } from "@/features/audioPlaylist/utils/helpers"
 import { isPlaylist } from "@/features/mediaFile/utils/helpers"
+import { useUser } from "@/stores/user"
 
-import { Button, ExternalLinkButton, LinkButton } from "./Button"
+import { AudioPlayer, VideoPlayer } from "./Player"
 import { Datagrid, WithDatagrid } from "./Datagrid"
+import { ExternalLinkButton, LinkButton } from "./Button"
 import { Badge } from "./Badge"
 import { Group } from "./Group"
 import { Heading } from "./Heading"
 import { Icon } from "./Icon"
 import { WithIcon } from "./WithIcon"
-import { WithLoading } from "./WithLoading"
 
 export type NavigationEvents = {
 	onPrevious?: () => void
@@ -122,9 +123,10 @@ export const PreviewItemLegend = ({ children }: PropsWithChildren) => (
 	<div
 		className={cn(
 			"flex justify-center",
-			"justify-self-center self-end py-[2.5vw] w-full row-start-1 col-start-1",
+			"justify-self-center self-end p-[2.5vw] row-start-1 col-start-1",
 			"is-horizontal:not-hover:opacity-0 is-horizontal:not-hover:translate-y-2",
 			"cursor-help",
+			"relative z-49",
 			"transition",
 		)}
 	>
@@ -162,87 +164,38 @@ export const PreviewImage = ({ item: { paths, originalName, uploader, createdAt 
 	</WithPreviewItemNavigation>
 )
 
-export const PreviewVideo = ({ item: { paths, originalName, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
-	<WithPreviewItemNavigation {...navigationEvents}>
+export const PreviewVideo = ({ item: { paths, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
+	<WithPreviewItemNavigation {...navigationEvents} className="md:w-9.5 md:p-0">
 		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
-			<video
-				src={getFileUrl(paths.full)}
-				className="w-full aspect-video self-center row-start-1 col-start-1 overflow-hidden object-contain"
-				controls
+			<div
+				className="flex flex-col gap-4 items-center justify-center text-primary text-center row-start-1 col-start-1"
 			>
-				{originalName}
-			</video>
+				<VideoPlayer
+					src={getFileUrl(paths.full)}
+					onPlay={() => useUser.getState().player?.setIsPlaying(false)}
+				/>
+			</div>
 			<PreviewItemLegend>{uploader.name} • {displayDateTime(createdAt)}</PreviewItemLegend>
 		</DialogTitle>
 	</WithPreviewItemNavigation>
 )
 
-export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt, id }, style, navigationEvents }: PreviewItemProps) => {
-	const audioId = String(id)
-	const audioRef = useRef<HTMLAudioElement>(null)
-
-	const [isLoading, setIsLoading] = useState(true)
-	const [isPlaying, setIsPlaying] = useState(false)
-
-	const handlePlayPause = () => {
-		const audio = audioRef.current
-
-		if (!audio) {
-			return
-		}
-
-		if (audio.paused) {
-			audio.play()
-		} else {
-			audio.pause()
-		}
-
-		setIsPlaying(!audio.paused)
-	}
-
-	return (
-		<WithPreviewItemNavigation {...navigationEvents}>
-			<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
-				<div
-					className="flex flex-col gap-4 items-center justify-center text-primary text-center row-start-1 col-start-1 text-4xl"
-				>
-					<audio
-						ref={audioRef}
-						id={audioId}
-						src={getFileUrl(paths.full)}
-						className="max-w-full max-h-full object-contain rounded"
-						onCanPlayThrough={() => setIsLoading(false)}
-					>
-						{originalName}
-					</audio>
-					<Button
-						onClick={handlePlayPause}
-						aria-controls={audioId}
-						intent="text"
-						size="inherit"
-					>
-						<WithLoading isLoading={isLoading}>
-							{isPlaying
-								? (
-									<WithIcon before="pause" className="sr-only">
-										Pause
-									</WithIcon>
-								)
-								: (
-									<WithIcon before="play" className="sr-only">
-										Lecture
-									</WithIcon>
-								)
-							}
-						</WithLoading>
-					</Button>
-					<Badge intent="primary">{originalName}</Badge>
-				</div>
-				<PreviewItemLegend>{uploader.name} • {displayDateTime(createdAt)}</PreviewItemLegend>
-			</DialogTitle>
-		</WithPreviewItemNavigation>
-	)
-}
+export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
+	<WithPreviewItemNavigation {...navigationEvents}>
+		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
+			<div
+				className="flex flex-col gap-4 items-center justify-center text-primary text-center row-start-1 col-start-1"
+			>
+				<AudioPlayer
+					src={getFileUrl(paths.full)}
+					onPlay={() => useUser.getState().player?.setIsPlaying(false)}
+				/>
+				<Badge intent="primary">{originalName}</Badge>
+			</div>
+			<PreviewItemLegend>{uploader.name} • {displayDateTime(createdAt)}</PreviewItemLegend>
+		</DialogTitle>
+	</WithPreviewItemNavigation>
+)
 
 export const PreviewPlaylist = ({ item: { paths, originalName, meta }, style, navigationEvents }: PreviewItemProps) => {
 	const { data, isLoading } = useQuery(audioPlaylistQueryOptions(paths.full))

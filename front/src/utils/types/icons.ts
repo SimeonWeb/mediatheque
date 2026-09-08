@@ -24,9 +24,11 @@ export type Icons = (
 	| "loader"
 	| "pause"
 	| "play"
+	| "replay"
 	| "spotify"
 	| "user"
 	| "video"
 	| "warning"
+	| "waveform"
 	| "x"
 )

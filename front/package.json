@@ -14,6 +14,10 @@
   "dependencies": {
     "@headlessui/react": "^2.2.10",
     "@hookform/resolvers": "^5.9.1",
+    "@radix-ui/react-slider": "^1.4.7",
+    "@react-av/controls": "^0.0.7",
+    "@react-av/core": "^0.0.5",
+    "@react-av/sliders": "^0.0.6",
     "@rpldy/chunked-uploady": "^1.13.0",
     "@rpldy/upload-button": "^1.13.0",
     "@rpldy/upload-drop-zone": "^1.13.0",

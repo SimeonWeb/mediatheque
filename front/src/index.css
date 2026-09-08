@@ -36,6 +36,44 @@
 	--font-handwriting: "Gochi Hand", cursive;
 }
 
+@theme {
+  --animate-waveform-bar: waveformBar 1s ease-in-out infinite;
+	@keyframes waveformBar {
+		0%,
+		100% {
+			transform-origin: center center;
+			transform: scaleY(.25);
+		}
+		20% {
+			transform: scaleY(.75);
+		}
+		50% {
+			transform: scaleY(.5);
+		}
+		80% {
+			transform: scaleY(1);
+		}
+	}
+
+  --animate-waveform-bar-low: waveformBarLow 1s ease-in-out infinite;
+	@keyframes waveformBarLow {
+		0%,
+		100% {
+			transform-origin: center center;
+			transform: scaleY(.1);
+		}
+		20% {
+			transform: scaleY(.4);
+		}
+		55% {
+			transform: scaleY(.8);
+		}
+		75% {
+			transform: scaleY(.65);
+		}
+	}
+}
+
 .onDragOver {
 	@apply border-primary border-solid border-2 bg-primary/5;
 }

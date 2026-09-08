@@ -27,23 +27,21 @@ export interface DialogProps extends DialogBaseProps {
 export const Dialog = ({ title, button = defaultCloseLabel, children, ...props }: DialogProps) => {
 	return (
 		<DialogBase {...props}>
-			<Card className="text-sm">
-				<CardItem isIso className="flex flex-col gap-4 md:gap-4 text-center max-w-sm">
-					<DialogTitle as={Heading} like="h6">
-						{title}
-					</DialogTitle>
+			<Group className="flex-col items-center w-90 max-w-screen p-6 text-center text-2xl" size="xl">
+				<DialogTitle as={Heading} like="h2">
+					{title}
+				</DialogTitle>
+				<Group className="flex-col font-handwriting" size="xl">
 					<DialogChildren close={props.close} children={children} />
-				</CardItem>
-				<Group isNarrow size="px" className="bg-primary-1">
-					<Button
-						onClick={props.close}
-						intent="text"
-						className="bg-primary-3 flex-1 rounded-none"
-					>
-						{button}
-					</Button>
 				</Group>
-			</Card>
+
+				<Button
+					onClick={props.close}
+					intent="text"
+				>
+					{button}
+				</Button>
+			</Group>
 		</DialogBase>
 	)
 }
