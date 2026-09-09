@@ -106,9 +106,9 @@ Construire le front avec les URL de production, qui restent relatives puisque to
 ```bash
 cd front
 cp .env.dist .env.production.local
-printf 'VITE_API_URL=/api\nVITE_UPLOADS_URL=/uploads\n' > .env.production.local
-yarn install --frozen-lockfile
-yarn build
+printf 'VITE_FRONT_URL=https://les-chouchouteries.niiniy.fr\nVITE_API_URL=/api\nVITE_UPLOADS_URL=/uploads\n' > .env.production.local
+docker compose front yarn install --frozen-lockfile
+docker compose front yarn build
 cd ..
 ```
 
