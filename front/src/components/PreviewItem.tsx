@@ -152,7 +152,13 @@ export const PreviewDocument = ({ item: { extension, originalName, paths, upload
 
 export const PreviewImage = ({ item: { paths, originalName, uploader, createdAt }, style, navigationEvents }: PreviewItemProps) => (
 	<WithPreviewItemNavigation {...navigationEvents}>
-		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
+		<DialogTitle
+			as={Group}
+			size="xl"
+			// Add 1 pixel to width to enable zoom on touch devices
+			className="pointer-events-auto grid w-[calc(100vw+1px)] h-full"
+			style={style}
+		>
 			<img
 				src={getFileUrl(paths.medium)}
 				srcSet={`${getFileUrl(paths.medium)} 1080w, ${getFileUrl(paths.full)} 1920w`}

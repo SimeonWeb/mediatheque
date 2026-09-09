@@ -266,7 +266,7 @@ export const Preview = ({ index, onItem, ref, ...props }: PreviewProps) => {
 		},
 		[]
 	)
-	const handleTouchMove = useCallback<TouchNavigationEvents["onTouchMove"]>(
+	const handleSwipeMove = useCallback<TouchNavigationEvents["onSwipeMove"]>(
 		({ y, min }) => {
 			if (isPlaylist(files[currentIndex])) {
 				return
@@ -332,7 +332,7 @@ export const Preview = ({ index, onItem, ref, ...props }: PreviewProps) => {
 	useCardinalNavigation({
 		onLeft: handleLeft,
 		onRight: handleRight,
-		onTouchMove: handleTouchMove,
+		onSwipeMove: handleSwipeMove,
 		onSwipeBottom: handleSwipeClose,
 	})
 
