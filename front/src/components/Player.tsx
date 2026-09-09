@@ -5,7 +5,7 @@ import { type ComponentPropsWithRef, type PropsWithClassName, type ReactNode, us
 import { ProgressBarRoot } from "@react-av/sliders"
 
 import { isIos, isSafari } from "@/utils/browser"
-import type { UserState } from "@/stores/user"
+import type { UserAction } from "@/stores/user"
 import { cn } from "@/utils/cn"
 
 import { Button } from "./Button"
@@ -18,7 +18,7 @@ type PlayerProps = {
 	src: string
 }
 
-type PlayPauseButtonProps = Omit<ComponentPropsWithRef<typeof Button>, "onPlay" | "onPause"> & Partial<Pick<UserState, "initPlayer">> & {
+type PlayPauseButtonProps = Omit<ComponentPropsWithRef<typeof Button>, "onPlay" | "onPause"> & Partial<Pick<UserAction, "initPlayer">> & {
 	autoPlay?: boolean
 	onPlay?: () => void
 	onPause?: () => void
