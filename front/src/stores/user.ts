@@ -8,10 +8,13 @@ type PlayerProps = {
 export type UserState = {
 	isReady: boolean
 	player: PlayerProps | null
+}
+
+export type UserAction = {
 	initPlayer: (player: PlayerProps) => void
 }
 
-export const useUser = create<UserState>()(
+export const useUser = create<UserState & UserAction>()(
 	set => ({
 		isReady: false,
 		player: null,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import { useIntersectionObserver } from "usehooks-ts"
@@ -7,6 +7,7 @@ import { getMediaFiles, getMediaFilesPage } from "@/features/mediaFile/api/fetch
 import { Listbox } from "@/components/Listbox"
 import { Loader } from "@/components/Loader"
 import { MediaGrid } from "@/components/MediaGrid"
+import type { PreviewProps } from "@/layouts/Dialogs"
 import { WithIcon } from "@/components/WithIcon"
 import { cn } from "@/utils/cn"
 import { defaultItemsPerPage } from "@/utils/pagination"
@@ -30,6 +31,8 @@ export const MediaTypeComponent = () => {
 	const { isIntersecting, ref } = useIntersectionObserver({
 		threshold: 0.25,
 	})
+
+	const containerRef = useRef<HTMLDivElement>(null)
 
 	const [isOnLastItem, setIsOnLastItem] = useState<boolean>(false)
 
@@ -94,14 +97,48 @@ export const MediaTypeComponent = () => {
 		return <Loader />
 	}
 
+	const handleChange: PreviewProps["onItem"] = (_, index, isLast) => {
+		setIsOnLastItem(isLast)
+
+		const { containerElement, prevIndex } = useFiles.getState()
+
+		if (!containerElement || !prevIndex) {
+			useFiles.setState({ prevIndex: index })
+
+			return
+		}
+
+		const originTop = (containerElement.children[prevIndex] as HTMLButtonElement).offsetTop
+		const newTop = (containerElement.children[index] as HTMLButtonElement).offsetTop
+
+		useFiles.setState({ prevIndex: index })
+
+		if (newTop !== originTop) {
+			window.scroll({ top: window.scrollY + newTop - originTop })
+		}
+	}
+
+	const handleOpen = () => {
+		useFiles.setState({
+			containerElement: containerRef.current,
+		})
+	}
+
+	const handleClose = () => {
+		useFiles.setState({ prevIndex: undefined, containerElement: null })
+	}
+
 	const defaultLabel = getMediaTypeDefautLabel(type)
 
 	return (
 		<>
 			<MediaGrid
+				ref={containerRef}
 				className="p-1 is-horizontal:p-[2.5vw] is-horizontal:pl-0"
 				items={items}
-				onItem={(_, __, isLast) => setIsOnLastItem(isLast)}
+				onItem={handleChange}
+				onOpen={handleOpen}
+				onClose={handleClose}
 			/>
 			<div
 				ref={ref}

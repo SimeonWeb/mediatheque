@@ -64,7 +64,7 @@ export const openAsyncConfirm = <TData = unknown, TError = DefaultError, TVariab
 
 export const openPreview = (
 	index: number,
-	props?: Omit<PreviewProps, "children" | "isOpen" | "close" | "index" | "files">,
+	props?: Omit<PreviewProps, "children" | "isOpen" | "close" | "index">,
 	events?: DialogEvents
 ) => {
 	useDialog.getState().open(

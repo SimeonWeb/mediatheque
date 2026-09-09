@@ -1,10 +1,11 @@
-import type { ComponentPropsWithRef } from "react"
+import { type ComponentPropsWithRef } from "react"
 
 import type { PreviewProps } from "@/layouts/Dialogs"
 import { cn } from "@/utils/cn"
 import { openPreview } from "@/utils/dialogs"
 
 import { MediaGridItem, type MediaGridItemProps } from "./MediaGridItem"
+import type { DialogEvents } from "@/stores/dialog"
 import { defaultItemsPerPage } from "@/utils/pagination"
 
 export type MediaGridContainerProps = ComponentPropsWithRef<"div">
@@ -22,18 +23,20 @@ export const MediaGridContainer = ({ ref, children, className, ...props }: Media
 	</div>
 )
 
-export type MediaGridProps = ComponentPropsWithRef<"div"> & {
+export type MediaGridProps = ComponentPropsWithRef<"div"> & DialogEvents & {
 	items?: MediaGridItemProps[]
 	onItem?: PreviewProps["onItem"]
 }
 
-export const MediaGrid = ({ items = [], onItem, ...props }: MediaGridProps) => {
+export const MediaGrid = ({ items = [], onItem, onOpen, onClose, ...props }: MediaGridProps) => {
 	return (
 		<MediaGridContainer {...props}>
 			{items.map((item, index) => (
 				<button
 					key={item.id}
-					onClick={() => openPreview(index, { onItem })}
+					onClick={() => {
+						openPreview(index, { onItem }, { onOpen, onClose })
+					}}
 					aria-label="Visualiser le document"
 					className={cn(
 						"cursor-pointer w-full aspect-square rounded-sm sm:rounded-md",

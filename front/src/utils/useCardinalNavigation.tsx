@@ -19,7 +19,7 @@ export type TouchNavigationEvents = {
 	onSwipeRight: () => void
 	onSwipeBottom: () => void
 	onSwipeLeft: () => void
-	onTouchMove: (params: TouchMoveParams) => void
+	onSwipeMove: (params: TouchMoveParams) => void
 }
 
 export type GeneralNavigationEvents = {
@@ -44,7 +44,7 @@ export const useCardinalNavigation = ({
 	onSwipeRight,
 	onSwipeBottom,
 	onSwipeLeft,
-	onTouchMove,
+	onSwipeMove,
 	onTop,
 	onRight,
 	onBottom,
@@ -104,6 +104,8 @@ export const useCardinalNavigation = ({
 			let touchEndX: number
 			let touchEndY: number
 
+			let isMultiTouch = false
+
 			// General events are inversed on swipe because of navigation logic
 			const doSwipe = () => {
 				const diffX = touchEndX - touchStartX
@@ -143,6 +145,7 @@ export const useCardinalNavigation = ({
 			}
 
 			const handleTouchStart = (event: TouchEvent) => {
+				isMultiTouch = event.touches.length > 1
 				touchStartX = event.changedTouches[0].screenX
 				touchStartY = event.changedTouches[0].screenY
 			}
@@ -154,13 +157,18 @@ export const useCardinalNavigation = ({
 				const diffX = touchMoveX - touchStartX
 				const diffY = touchMoveY - touchStartY
 
-				onTouchMove?.({ x: diffX, y: diffY, min, event })
+				if (!isMultiTouch) {
+					onSwipeMove?.({ x: diffX, y: diffY, min, event })
+				}
 			}
 
 			const handleTouchEnd = (event: TouchEvent) => {
 				touchEndX = event.changedTouches[0].screenX
 				touchEndY = event.changedTouches[0].screenY
-				doSwipe()
+
+				if (!isMultiTouch) {
+					doSwipe()
+				}
 			}
 
 			document.addEventListener("touchstart", handleTouchStart)
@@ -178,7 +186,7 @@ export const useCardinalNavigation = ({
 			onSwipeRight,
 			onSwipeBottom,
 			onSwipeLeft,
-			onTouchMove,
+			onSwipeMove,
 			onTop,
 			onRight,
 			onBottom,

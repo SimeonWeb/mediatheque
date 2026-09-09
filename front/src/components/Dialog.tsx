@@ -31,7 +31,7 @@ export const Dialog = ({ isOpen = true, close, children, containerClassName, cla
 		>
 			<DialogBackdrop
 				transition
-				className="DialogBackdrop fixed inset-0 bg-neutral-900/95 backdrop-blur-xl transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in cursor-pointer"
+				className="DialogBackdrop fixed inset-0 bg-neutral-900 transition-opacity data-closed:opacity-0 data-enter:ease-out data-leave:duration-200 data-leave:ease-in cursor-pointer"
 			/>
 
 			<DialogPanel
