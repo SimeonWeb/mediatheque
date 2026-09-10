@@ -2,8 +2,8 @@ import type { Uploader } from "@/features/uploader/api/types"
 
 export type MediaFilePaths = {
 	full: string
-	medium: string
-	thumbnail: string
+	medium: string | null
+	thumbnail: string | null
 }
 
 export type MediaFile = {

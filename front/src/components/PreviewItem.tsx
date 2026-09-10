@@ -160,8 +160,8 @@ export const PreviewImage = ({ item: { paths, originalName, uploader, createdAt 
 			style={style}
 		>
 			<img
-				src={getFileUrl(paths.medium)}
-				srcSet={`${getFileUrl(paths.medium)} 1080w, ${getFileUrl(paths.full)} 1920w`}
+				src={getFileUrl(paths.medium || paths.full)}
+				srcSet={`${getFileUrl(paths.medium || paths.full)} 1080w, ${getFileUrl(paths.full)} 1920w`}
 				alt={originalName}
 				className="w-full h-full row-start-1 col-start-1 overflow-hidden object-contain"
 			/>
@@ -206,7 +206,7 @@ export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt 
 export const PreviewPlaylist = ({ item: { paths, originalName, meta }, style, navigationEvents }: PreviewItemProps) => {
 	const { data, isLoading } = useQuery(audioPlaylistQueryOptions(paths.full))
 
-	const playlistPath = paths.thumbnail.replace("artwork.jpg", "")
+	const playlistPath = paths.thumbnail?.replace("artwork.jpg", "") ?? ""
 
 	return (
 		<div className="relative h-full w-full overflow-y-auto pointer-events-auto">
@@ -220,10 +220,12 @@ export const PreviewPlaylist = ({ item: { paths, originalName, meta }, style, na
 				>
 					<header>
 						<DialogTitle as={Group} size="xl" className="items-end">
-							<img
-								src={getFileUrl(paths.thumbnail)}
-								className="block size-24 md:size-32 rounded"
-							/>
+							{paths.thumbnail && (
+								<img
+									src={getFileUrl(paths.thumbnail)}
+									className="block size-24 md:size-32 rounded"
+								/>
+							)}
 							<Group className="flex-col" size="sm">
 								<p className="text-2xs uppercase font-normal text-white">Playlist</p>
 								<Heading as="h2" className="text-3xl md:text-4xl text-accent">

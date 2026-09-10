@@ -13,9 +13,13 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final readonly class ChunkUploadManager
 {
+    private const int MAX_VIDEO_THUMBNAIL_FILE_SIZE = 1024 * 1024;
+
     public function __construct(
         #[Autowire('%app.upload_chunk_dir%')]
         private string $chunkDirectory,
+        #[Autowire('%env(int:THUMB_SIZE)%')]
+        private int $thumbnailSize,
         #[Autowire('%env(int:MAX_FILE_SIZE)%')]
         private int $maxFileSize,
         #[Autowire('%env(int:UPLOAD_CHUNK_TTL)%')]
@@ -29,6 +33,7 @@ final readonly class ChunkUploadManager
         string $uploadId,
         string $uploaderId,
         string $contentRange,
+        ?UploadedFile $thumbnail = null,
     ): ChunkUploadResult {
         if (1 !== preg_match('/^[A-Za-z0-9._-]{1,128}$/', $uploadId)) {
             throw new BadRequestHttpException('Le champ "upload_id" est invalide.');
@@ -87,6 +92,14 @@ final readonly class ChunkUploadManager
                 $total,
             );
 
+            if (null !== $thumbnail) {
+                if (0 !== $start) {
+                    throw new BadRequestHttpException('La miniature doit être envoyée avec le premier chunk.');
+                }
+
+                $this->storeThumbnail($thumbnail, $sessionDirectory);
+            }
+
             $partName = sprintf('%020d-%020d.part', $start, $end);
             $partPath = $sessionDirectory.'/'.$partName;
 
@@ -113,6 +126,7 @@ final readonly class ChunkUploadManager
                 $total,
                 $manifest['originalName'],
                 $assembledPath,
+                is_file($sessionDirectory.'/thumbnail.file') ? $sessionDirectory.'/thumbnail.file' : null,
             );
         } catch (HttpException $exception) {
             throw $exception;
@@ -283,6 +297,44 @@ final readonly class ChunkUploadManager
         $this->filesystem->rename($temporaryPath, $assembledPath, true);
 
         return $assembledPath;
+    }
+
+    private function storeThumbnail(UploadedFile $thumbnail, string $sessionDirectory): void
+    {
+        if (!$thumbnail->isValid()) {
+            throw new BadRequestHttpException('La miniature de la vidéo n’a pas pu être envoyée.');
+        }
+
+        $size = $thumbnail->getSize();
+        $imageInfo = @getimagesize($thumbnail->getPathname());
+        if (
+            false === $size
+            || $size < 1
+            || $size > self::MAX_VIDEO_THUMBNAIL_FILE_SIZE
+            || false === $imageInfo
+            || 'image/jpeg' !== ($imageInfo['mime'] ?? null)
+            || $imageInfo[0] < 1
+            || $imageInfo[1] < 1
+            || max($imageInfo[0], $imageInfo[1]) > max(1, $this->thumbnailSize)
+        ) {
+            throw new BadRequestHttpException(sprintf(
+                'La miniature de la vidéo doit être une image JPEG valide de 1 Mo et %d px maximum.',
+                max(1, $this->thumbnailSize),
+            ));
+        }
+
+        $thumbnailPath = $sessionDirectory.'/thumbnail.file';
+        if (is_file($thumbnailPath)) {
+            $existingHash = hash_file('sha256', $thumbnailPath);
+            $uploadedHash = hash_file('sha256', $thumbnail->getPathname());
+            if (false === $existingHash || false === $uploadedHash || !hash_equals($existingHash, $uploadedHash)) {
+                throw new ConflictHttpException('Une miniature différente existe déjà pour cette session d’upload.');
+            }
+
+            return;
+        }
+
+        $thumbnail->move($sessionDirectory, 'thumbnail.file');
     }
 
     private function cleanupExpiredUploads(): void

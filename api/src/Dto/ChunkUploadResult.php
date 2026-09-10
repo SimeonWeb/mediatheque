@@ -10,6 +10,7 @@ final readonly class ChunkUploadResult
         public int $totalBytes,
         public string $originalName,
         public ?string $assembledPath = null,
+        public ?string $thumbnailPath = null,
     ) {
     }
 
