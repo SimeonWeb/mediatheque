@@ -1,21 +1,11 @@
-import { type ErrorComponentProps, useRouter } from "@tanstack/react-router"
-import z from "zod"
+import { type ErrorComponentProps } from "@tanstack/react-router"
 
 import { Alert } from "@/components/Alert"
-import { FieldAside } from "@/components/FieldAside"
-import { Form } from "@/components/Form"
-import { FormSubmit } from "@/components/FormSubmit"
-import { InputFormField } from "@/components/InputFormField"
-import { sleep } from "@/utils/sleep"
-import { useAuth } from "@/stores/auth"
-import { zf } from "@/utils/zod"
 
 import { Header } from "./Header"
 import { HomeComponent } from "./HomeComponent"
 
 export const ErrorComponent = ({ error }: ErrorComponentProps) => {
-	const router = useRouter()
-
 	return (
 		<>
 			<Header />
@@ -25,44 +15,10 @@ export const ErrorComponent = ({ error }: ErrorComponentProps) => {
 			<div
 				className="fixed bottom-4 is-vertical:inset-x-4 w-auto z-30 is-horizontal:top-[2.5vw] is-horizontal:inset-x-[2.5vw]"
 			>
-				{error.message === "Unauthorized"
+				{typeof error.cause === "object" && error.cause !== null && "status" in error.cause && error.cause.status === 401
 					? (
-						<Alert title="Vous ne pouvez pas accéder à ce contenu">
-							<Form
-								schema={z.object({
-									token: zf.string("Token"),
-								})}
-								defaultValues={{
-									token: "",
-								}}
-								onValid={async data => {
-									useAuth.setState(data)
-									await sleep(400)
-								}}
-								onValidated={async () => {
-									await sleep(400)
-									router.invalidate()
-								}}
-								className="w-full"
-							>
-								<InputFormField
-									name="token"
-									fieldClassName="[&_label]:sr-only"
-									placeholder="Renseignez votre token"
-									autoCapitalize="off"
-									autoComplete="off"
-									autoCorrect="off"
-									after={
-										<FieldAside isButton>
-											<FormSubmit
-												isNarrow
-												icon="check"
-												className="[&_.Icon+span]:sr-only"
-											/>
-										</FieldAside>
-									}
-								/>
-							</Form>
+						<Alert title="Trop tard...">
+							<p>Utilisez le lien qui vous a été fourni pour accéder au contenu</p>
 						</Alert>
 					)
 					: <Alert title={error.message} />

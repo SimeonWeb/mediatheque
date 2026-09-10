@@ -104,12 +104,8 @@ docker compose run --rm --no-deps api php bin/console lexik:jwt:generate-keypair
 Construire le front avec les URL de production, qui restent relatives puisque tout est servi sur le même domaine :
 
 ```bash
-cd front
-cp .env.dist .env.production.local
-printf 'VITE_FRONT_URL=https://les-chouchouteries.niiniy.fr\nVITE_API_URL=/api\nVITE_UPLOADS_URL=/uploads\n' > .env.production.local
-docker compose front yarn install --frozen-lockfile
-docker compose front yarn build
-cd ..
+docker compose run --rm front yarn install --frozen-lockfile
+docker compose run --rm front yarn build
 ```
 
 Le dossier `front/dist` et le dossier `api/vendor` doivent exister avant de poursuivre.
@@ -131,7 +127,7 @@ rsync -a api/ build/ovh-perso/app/ \
   --exclude='tests/' \
   --exclude='var/'
 
-cp api/.env.local build/ovh-perso/app/.env.local
+cp api/.env.production build/ovh-perso/app/.env.local
 rsync -a front/dist/ build/ovh-perso/public/
 cp deployment/ovh-perso/.ovhconfig build/ovh-perso/.ovhconfig
 cp deployment/ovh-perso/public/.htaccess build/ovh-perso/public/.htaccess
