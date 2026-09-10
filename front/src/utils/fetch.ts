@@ -41,7 +41,7 @@ export const fetchWithContext = async (
 
 	if (!response.ok) {
 		if (!response.headers.get("content-type")?.match(/application\/.+json/)) {
-			throw new Error(response.statusText || defaultErrorMessage)
+			throw new Error(response.statusText || defaultErrorMessage, { cause: response })
 		}
 
 		const json = await response.json()
