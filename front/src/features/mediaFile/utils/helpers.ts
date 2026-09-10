@@ -5,7 +5,7 @@ import { getFileUrl } from "@/utils/file"
 export const toMediaGridItem = ({ id, originalName, paths, extension, type }: MediaFile): MediaGridItemProps => ({
 	id,
 	name: originalName,
-	src: getFileUrl(paths.thumbnail || paths.full),
+	src: type !== "video" || paths.thumbnail ? getFileUrl(paths.thumbnail || paths.full) : "",
 	extension: extension,
 	type,
 })
