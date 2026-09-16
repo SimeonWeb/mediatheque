@@ -190,7 +190,7 @@ export const PreviewAudio = ({ item: { paths, originalName, uploader, createdAt 
 	<WithPreviewItemNavigation {...navigationEvents}>
 		<DialogTitle as={Group} size="xl" className="pointer-events-auto grid w-full h-full" style={style}>
 			<div
-				className="flex flex-col gap-4 items-center justify-center text-primary text-center row-start-1 col-start-1"
+				className="flex flex-col gap-4 items-center justify-center text-white text-center row-start-1 col-start-1"
 			>
 				<AudioPlayer
 					src={getFileUrl(paths.full)}
