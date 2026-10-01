@@ -45,7 +45,14 @@ export const MediaGridMoment = ({ moment, className, ...props }: MediaGridMoment
 			aria-hidden
 		>
 			<div className="flex pl-2 pt-2 pb-1 is-horizontal:pl-[1vw] is-horizontal:pt-[1vw]">
-				<Badge intent="neutral" className="bg-white/60 backdrop-blur-xl">
+				<Badge
+					intent="neutral"
+					className="bg-white/60 backdrop-blur-xl cursor-pointer"
+					onClick={() => window.scroll({
+						top: document.getElementById(moment.slug)?.offsetTop,
+						behavior: "smooth",
+					})}
+				>
 					{moment.label}
 				</Badge>
 			</div>
