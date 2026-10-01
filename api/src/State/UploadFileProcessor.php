@@ -32,6 +32,8 @@ use Symfony\Component\Uid\Uuid;
  */
 final readonly class UploadFileProcessor implements ProcessorInterface
 {
+    private const int MAX_VIDEO_THUMBNAIL_FILE_SIZE = 1024 * 1024;
+
     private const array ALLOWED_MIME_TYPES = [
         'application/pdf',
         'application/json',
@@ -97,7 +99,17 @@ final readonly class UploadFileProcessor implements ProcessorInterface
             throw new BadRequestHttpException('Le fichier n’a pas pu être envoyé.');
         }
 
+        $uploadedThumbnail = $request->files->get('thumbnail');
+        if (null !== $uploadedThumbnail && (!$uploadedThumbnail instanceof UploadedFile || !$uploadedThumbnail->isValid())) {
+            throw new BadRequestHttpException('La miniature de la vidéo n’a pas pu être envoyée.');
+        }
+
+        if ($uploadedThumbnail instanceof UploadedFile) {
+            $this->validateVideoThumbnail($uploadedThumbnail);
+        }
+
         $completedUploadId = null;
+        $videoThumbnailPath = $uploadedThumbnail?->getPathname();
         $sourcePath = $uploadedFile->getPathname();
         $clientOriginalName = $uploadedFile->getClientOriginalName();
         $contentRange = $request->headers->get('Content-Range');
@@ -113,6 +125,7 @@ final readonly class UploadFileProcessor implements ProcessorInterface
                 trim($uploadId),
                 $uploaderId,
                 $contentRange,
+                $uploadedThumbnail,
             );
 
             if (!$chunkUpload->isComplete()) {
@@ -127,6 +140,7 @@ final readonly class UploadFileProcessor implements ProcessorInterface
             $completedUploadId = $chunkUpload->uploadId;
             $sourcePath = $chunkUpload->assembledPath;
             $clientOriginalName = $chunkUpload->originalName;
+            $videoThumbnailPath = $chunkUpload->thumbnailPath;
         }
 
         try {
@@ -191,9 +205,9 @@ final readonly class UploadFileProcessor implements ProcessorInterface
             $fullAbsolutePath = null;
             $mediumRelativePath = null;
             $mediumAbsolutePath = null;
+            $baseName = pathinfo($storageName, PATHINFO_FILENAME);
 
             if (str_starts_with($mimeType, 'image/')) {
-                $baseName = pathinfo($storageName, PATHINFO_FILENAME);
                 $thumbnailName = sprintf(
                     '%s-%d.jpg',
                     $baseName,
@@ -216,6 +230,23 @@ final readonly class UploadFileProcessor implements ProcessorInterface
                     $this->filesystem->remove([$absolutePath, $thumbnailAbsolutePath, $mediumAbsolutePath, $fullAbsolutePath]);
 
                     throw new UnprocessableEntityHttpException('Les variantes de l’image n’ont pas pu être générées.', $exception);
+                }
+            } elseif (MediaType::Video === $mediaType && null !== $videoThumbnailPath) {
+                $thumbnailName = sprintf('%s-%d.jpg', $baseName, max(1, $this->thumbnailSize));
+                $thumbnailRelativePath = $directory.'/'.$thumbnailName;
+                $thumbnailAbsolutePath = $targetDirectory.DIRECTORY_SEPARATOR.$thumbnailName;
+
+                try {
+                    $thumbnailFile = new File($videoThumbnailPath);
+                    if ('image/jpeg' !== $thumbnailFile->getMimeType()) {
+                        throw new \RuntimeException('Le format de la miniature est invalide.');
+                    }
+
+                    $this->imageVariantGenerator->generate($videoThumbnailPath, $thumbnailAbsolutePath, $this->thumbnailSize);
+                } catch (\Throwable $exception) {
+                    $this->filesystem->remove([$absolutePath, $thumbnailAbsolutePath]);
+
+                    throw new UnprocessableEntityHttpException('La miniature de la vidéo n’a pas pu être générée.', $exception);
                 }
             }
 
@@ -259,5 +290,26 @@ final readonly class UploadFileProcessor implements ProcessorInterface
         }
 
         return (int) ceil($bytes / (1024 * 1024)).' Mo';
+    }
+
+    private function validateVideoThumbnail(UploadedFile $thumbnail): void
+    {
+        $size = $thumbnail->getSize();
+        $imageInfo = @getimagesize($thumbnail->getPathname());
+        if (
+            false === $size
+            || $size < 1
+            || $size > self::MAX_VIDEO_THUMBNAIL_FILE_SIZE
+            || false === $imageInfo
+            || 'image/jpeg' !== ($imageInfo['mime'] ?? null)
+            || $imageInfo[0] < 1
+            || $imageInfo[1] < 1
+            || max($imageInfo[0], $imageInfo[1]) > max(1, $this->thumbnailSize)
+        ) {
+            throw new BadRequestHttpException(sprintf(
+                'La miniature de la vidéo doit être une image JPEG valide de 1 Mo et %d px maximum.',
+                max(1, $this->thumbnailSize),
+            ));
+        }
     }
 }

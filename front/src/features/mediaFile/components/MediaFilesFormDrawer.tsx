@@ -1,5 +1,5 @@
 import { type Batch, type BatchItem, ChunkedUploady, FILE_STATES, UPLOADER_EVENTS, useAbortAll, useAbortItem, useAllAbortListener, useBatchAddListener, useBatchFinishListener, useBatchProgressListener, useChunkStartListener, useItemAbortListener, useItemFinalizeListener, useItemStartListener, useUploady } from "@rpldy/chunked-uploady"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { UploadDropZone } from "@rpldy/upload-drop-zone"
 import { asUploadButton } from "@rpldy/upload-button"
@@ -25,6 +25,7 @@ import type { UploaderItem } from "@/features/uploader/api/types"
 import { WithIcon } from "@/components/WithIcon"
 import { WithLoading } from "@/components/WithLoading"
 import { cn } from "@/utils/cn"
+import { createVideoThumbnail } from "@/features/mediaFile/utils/createVideoThumbnail"
 import { defaultItemsPerPage } from "@/utils/pagination"
 import { findScrollContainer } from "@/utils/scroll"
 import { getPluralizedText } from "@/utils/text"
@@ -41,15 +42,32 @@ const UploadButton = asUploadButton<ButtonProps>(props => (
 ))
 
 const UploadChunkParams = () => {
-	useChunkStartListener(({ item, sendOptions }) => ({
-		sendOptions: {
-			...sendOptions,
-			params: {
-				...sendOptions.params,
-				upload_id: item.id,
+	const thumbnails = useRef(new Map<string, Promise<File | null>>())
+
+	useChunkStartListener(async ({ item, chunk, sendOptions }) => {
+		let thumbnail: File | null = null
+
+		if (chunk.index === 0 && item.file instanceof File && item.file.type.startsWith("video/")) {
+			let thumbnailPromise = thumbnails.current.get(item.id)
+			if (!thumbnailPromise) {
+				thumbnailPromise = createVideoThumbnail(item.file)
+				thumbnails.current.set(item.id, thumbnailPromise)
+			}
+
+			thumbnail = await thumbnailPromise
+		}
+
+		return {
+			sendOptions: {
+				...sendOptions,
+				params: {
+					...sendOptions.params,
+					upload_id: item.id,
+					...(thumbnail ? { thumbnail } : {}),
+				},
 			},
-		},
-	}))
+		}
+	})
 
 	return null
 }

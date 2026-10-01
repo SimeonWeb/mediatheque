@@ -10,6 +10,8 @@ import { cn } from "@/utils/cn"
 
 import { Button } from "./Button"
 import { Group } from "./Group"
+import { Icon } from "./Icon"
+import { Loader } from "./Loader"
 import { Waveform } from "./Waveform"
 import { WithIcon } from "./WithIcon"
 import { WithLoading } from "./WithLoading"
@@ -73,7 +75,7 @@ const PlayPauseButton = ({ className, autoPlay, initPlayer, onPlay, onPause, ...
 				"relative aspect-square text-4xl",
 				className
 			)}
-			intent="primary"
+			intent="text"
 			{...props}
 			isNarrow
 		>
@@ -128,7 +130,7 @@ export type ProgressBarProps = PropsWithClassName
 export const ProgressBar = ({ className }: ProgressBarProps) => (
 	<ProgressBarRoot
 		className={cn(
-			"grow relative bg-neutral-900/40 h-6 md:h-10 cursor-pointer flex items-center select-none touch-none overflow-hidden",
+			"grow relative bg-neutral-900/40 h-8 md:h-10 cursor-pointer flex items-center select-none touch-none overflow-hidden",
 			"outline-transparent outline-1 focus-within:outline-white",
 			className
 		)}
@@ -136,7 +138,7 @@ export const ProgressBar = ({ className }: ProgressBarProps) => (
 		<Slider.Track className="relative grow h-full">
 			<Slider.Range className="absolute h-full bg-primary" />
 		</Slider.Track>
-		<Slider.Thumb className="block w-px h-6 md:h-10 bg-white outline-none z-20" />
+		<Slider.Thumb className="block w-px h-8 md:h-10 outline-none z-20" />
 		{!isSafari() && (
 			<>
 				<Controls.Timestamp type="elapsed" className="absolute h-full left-0 px-3 py-2 md:px-4 md:py-3" />
@@ -253,7 +255,19 @@ export const AudioPlayer = ({ src, ...props }: AudioPlayerProps) => (
 					"flex items-center"
 				)}
 			>
-				<ProgressBar className="rounded-3xl" />
+				<Controls.PlayPause
+					{...props}
+					playIcon={<Icon name="play" />}
+					pauseIcon={<Icon name="pause" />}
+					loadingIcon={<Loader />}
+					className={cn(
+						"flex items-center",
+						"text-base aspect-auto",
+						"pr-3 pl-4 h-8 md:h-10 bg-white/20 rounded-l-3xl cursor-pointer",
+						"outline-transparent outline-1 focus-visible:outline-white",
+					)}
+				/>
+				<ProgressBar className="rounded-r-3xl bg-white/20" />
 			</Group>
 		</Media.Viewport>
 	</Media.Root>
@@ -294,7 +308,7 @@ export const VideoPlayer = ({ src, className, ...props }: VideoPlayerProps) => (
 					/>
 					<div
 						className={cn(
-							"absolute inset-x-0 bottom-0 pb-2 md:pb-4 lg:pb-10 px-12",
+							"absolute inset-x-0 bottom-0 pb-6 lg:pb-10 px-12",
 							"transition duration-500",
 							{
 								"not-focus-within:opacity-0 not-focus-within:translate-y-2 md:not-focus-within:translate-y-2": !controlsVisible,
@@ -310,10 +324,23 @@ export const VideoPlayer = ({ src, className, ...props }: VideoPlayerProps) => (
 								"flex items-center"
 							)}
 						>
-							<ProgressBar className="rounded-l-3xl only:rounded-r-3xl" />
+							<Controls.PlayPause
+								{...props}
+								playIcon={<Icon name="play" />}
+								pauseIcon={<Icon name="pause" />}
+								loadingIcon={<Loader />}
+								className={cn(
+									"flex items-center",
+									"text-base aspect-auto",
+									"pr-3 pl-4 h-8 md:h-10 bg-neutral-900/40 rounded-l-3xl cursor-pointer",
+									"outline-transparent outline-1 focus-visible:outline-white",
+								)}
+							/>
+							<ProgressBar className="last:rounded-r-3xl" />
 							{!isIos() && (
 								<Controls.Fullscreen
 									className={cn(
+										"flex items-center",
 										"pl-3 pr-4 h-8 md:h-10 bg-neutral-900/40 rounded-r-3xl cursor-pointer",
 										"outline-transparent outline-1 focus-visible:outline-white",
 									)}

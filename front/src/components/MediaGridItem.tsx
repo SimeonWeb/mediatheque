@@ -15,7 +15,13 @@ export const MediaGridItem = (item: MediaGridItemProps) => {
 		case "image":
 			return <MediaGridImage {...item} />
 		case "video":
-			return <MediaGridVideo {...item} />
+			if (item.src) {
+				if (item.src.startsWith("blob:")) {
+					return <MediaGridVideo {...item} />
+				}
+				return <MediaGridImage {...item} />
+			}
+			return <MediaGridDocument {...item} />
 		case "audio":
 			if (item.extension === "json") {
 				return <MediaGridPlaylist {...item} />
@@ -38,8 +44,8 @@ export const MediaGridDocument = ({ name, extension, type }: MediaGridItemProps)
 			)}
 		>
 			<div className="size-[40cqb] grid col-span-1 row-span-1 justify-center items-center">
-				{type === "audio"
-					? <Icon name="audio" className="col-start-1 row-start-1 size-full" />
+				{(type === "audio" || type === "video")
+					? <Icon name={type} className="col-start-1 row-start-1 size-full" />
 					: (
 						<>
 							<Icon name="document" className="col-start-1 row-start-1 size-full" />

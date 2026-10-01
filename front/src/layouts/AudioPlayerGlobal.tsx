@@ -62,7 +62,7 @@ export const AudioPlayerGlobal = () => {
 		>
 			<AudioPlayerMini
 				initPlayer={useUser.getState().initPlayer}
-				src="/assets/Chouchout(e)ries.mp3"
+				src="/Chouchout(e)ries.mp3"
 				className="bg-transparent text-current text-xl"
 				autoPlay
 			/>
