@@ -88,17 +88,10 @@ Utiliser le premier pour `APP_SECRET` et les trois autres pour les tokens d'acc�
 
 ### 4. Construire l'API et le front
 
-Installer les dépendances PHP de production :
+Construire l’image de l’API :
 
 ```bash
 docker compose build api
-docker compose run --rm --no-deps -e APP_ENV=prod -e APP_DEBUG=0 api composer install --no-dev --optimize-autoloader
-```
-
-Le bundle JWT est actuellement chargé même si l'application utilise ses propres Bearer tokens. Générer sa paire de clés après l'installation de Composer :
-
-```bash
-docker compose run --rm --no-deps -e APP_ENV=prod -e APP_DEBUG=0 api php bin/console lexik:jwt:generate-keypair --skip-if-exists
 ```
 
 Construire le front avec les URL de production, qui restent relatives puisque tout est servi sur le même domaine :
@@ -108,7 +101,7 @@ docker compose run --rm front yarn install --frozen-lockfile
 docker compose run --rm front yarn build
 ```
 
-Le dossier `front/dist` et le dossier `api/vendor` doivent exister avant de poursuivre.
+Le dossier `front/dist` doit exister avant de poursuivre. Les dépendances PHP de production seront installées directement dans le dossier de livraison afin de ne pas supprimer les dépendances de développement de `api/vendor`.
 
 ### 5. Préparer le dossier à envoyer
 
@@ -116,6 +109,7 @@ Le dossier `front/dist` et le dossier `api/vendor` doivent exister avant de pour
 
 ```bash
 rm -rf build/ovh-perso
+mkdir -p build/ovh-perso/app/public
 mkdir -p build/ovh-perso/app/var/cache build/ovh-perso/app/var/log build/ovh-perso/app/var/upload_chunks
 mkdir -p build/ovh-perso/public/uploads
 
@@ -126,9 +120,32 @@ rsync -a api/ build/ovh-perso/app/ \
   --exclude='docker/' \
   --exclude='public/' \
   --exclude='tests/' \
+  --exclude='vendor/' \
   --exclude='var/'
 
 cp api/.env.prod.local build/ovh-perso/app/.env.local
+
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+docker compose run --rm --no-deps \
+  --user "$HOST_UID:$HOST_GID" \
+  -e APP_ENV=prod \
+  -e APP_DEBUG=0 \
+  -e COMPOSER_HOME=/tmp/composer \
+  -v "$PWD/build/ovh-perso/app:/var/www/html" \
+  api composer install --no-dev --optimize-autoloader --no-interaction
+
+docker compose run --rm --no-deps \
+  --user "$HOST_UID:$HOST_GID" \
+  -e APP_ENV=prod \
+  -e APP_DEBUG=0 \
+  -v "$PWD/build/ovh-perso/app:/var/www/html" \
+  api php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+rm -rf build/ovh-perso/app/public
+rm -rf build/ovh-perso/app/var/cache
+mkdir -p build/ovh-perso/app/var/cache
+
 rsync -a front/dist/ build/ovh-perso/public/
 cp deployment/ovh-perso/.ovhconfig build/ovh-perso/.ovhconfig
 cp deployment/ovh-perso/public/.htaccess build/ovh-perso/public/.htaccess
@@ -201,7 +218,7 @@ Vérifier enfin l'envoi d'une petite image, sa miniature et son accès sous `/up
 ./deployment/ovh-perso/build.sh
 ```
 
-Le script va reconstruire `api/vendor` et `front/dist`, recréer `build/ovh-perso`, puis remplacer par FTPS les dossiers `app` et les fichiers statiques de `public`. Conserver :
+Le script va reconstruire `front/dist`, installer les dépendances PHP de production dans `build/ovh-perso/app/vendor`, recréer le reste de `build/ovh-perso`, puis remplacer par FTPS les dossiers `app` et les fichiers statiques de `public`. Le dossier local `api/vendor` reste inchangé. Conserver :
 
 - le fichier de production `app/.env.local` ;
 - le contenu de `public/uploads` ;
