@@ -93,6 +93,7 @@ export const MediaGrid = ({ items = [], moments = [], onItem, onOpen, onClose, .
 								onClick={() => {
 									openPreview(index, { onItem }, { onOpen, onClose })
 								}}
+								data-index={index}
 								aria-label="Visualiser le document"
 								className={cn(
 									"cursor-pointer w-full aspect-square rounded-sm sm:rounded-md",

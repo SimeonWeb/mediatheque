@@ -110,8 +110,8 @@ export const MediaTypeComponent = () => {
 			return
 		}
 
-		const originTop = (containerElement.children[prevIndex] as HTMLButtonElement).offsetTop
-		const newTop = (containerElement.children[index] as HTMLButtonElement).offsetTop
+		const originTop = (containerElement.querySelector(`[data-index="${prevIndex}"]`) as HTMLButtonElement).offsetTop
+		const newTop = (containerElement.querySelector(`[data-index="${index}"]`) as HTMLButtonElement).offsetTop
 
 		useFiles.setState({ prevIndex: index })
 
