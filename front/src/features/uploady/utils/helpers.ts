@@ -10,6 +10,7 @@ export const toMediaGridItem = ({ id, file }: BatchItem): MediaGridItemProps => 
 	src: URL.createObjectURL(file),
 	extension: getExtensionFromMime(file.type),
 	type: getTypeFromMime(file.type),
+	createdAt: "",
 })
 
 export const defaultBatchItemCount = {
