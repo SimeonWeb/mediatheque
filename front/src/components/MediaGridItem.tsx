@@ -8,6 +8,7 @@ export type MediaGridItemProps = {
 	src: string
 	extension?: string
 	type: string
+	createdAt: string
 }
 
 export const MediaGridItem = (item: MediaGridItemProps) => {

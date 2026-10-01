@@ -5,6 +5,7 @@ import type { AppQueryClient } from "@/utils/queryClient"
 import { ErrorComponent } from "@/layouts/ErrorComponent"
 import { RootComponent } from "@/layouts/RootComponent"
 import { mediaTypesQueryOptions } from "@/features/mediaType/api/options"
+import { momentsQueryOptions } from "@/features/moment/api/options"
 import { useAuth } from "@/stores/auth"
 
 export const Route = createRootRouteWithContext<{
@@ -17,7 +18,10 @@ export const Route = createRootRouteWithContext<{
 		await useAuth.getState().init()
 	},
 	loader: async ({ context: { queryClient } }) => (
-		await queryClient.ensureQueryData(mediaTypesQueryOptions())
+		await Promise.all([
+			queryClient.ensureQueryData(mediaTypesQueryOptions()),
+			queryClient.ensureQueryData(momentsQueryOptions()),
+		])
 	),
 	component: RootComponent,
 	errorComponent: ErrorComponent,

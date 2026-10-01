@@ -2,12 +2,13 @@ import type { MediaFile } from "@/features/mediaFile/api/types"
 import type { MediaGridItemProps } from "@/components/MediaGridItem"
 import { getFileUrl } from "@/utils/file"
 
-export const toMediaGridItem = ({ id, originalName, paths, extension, type }: MediaFile): MediaGridItemProps => ({
+export const toMediaGridItem = ({ id, originalName, paths, extension, type, createdAt }: MediaFile): MediaGridItemProps => ({
 	id,
 	name: originalName,
 	src: type !== "video" || paths.thumbnail ? getFileUrl(paths.thumbnail || paths.full) : "",
 	extension: extension,
 	type,
+	createdAt,
 })
 
 export const getTypeFromMime = (mimeType: string) => (

@@ -498,7 +498,7 @@ export const MediaFilesFormDrawer = () => {
 										accept={getAllowedMimeTypes().join(",")}
 										listeners={{
 											[UPLOADER_EVENTS.BATCH_FINALIZE]: async (batch: Batch) => {
-												if (batch.items.length > 0) {
+												if (batch.items.length > 0 && batch.loaded > 0) {
 													await sleep(500)
 													setDataBatch(batch)
 												}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import { useIntersectionObserver } from "usehooks-ts"
 
@@ -16,8 +16,10 @@ import { uploadersQueryOptions } from "@/features/uploader/api/options"
 import { useFiles } from "@/features/mediaFile/utils/store"
 
 import { getMediaTypeDefautLabel } from "../utils/labels"
+import { momentsQueryOptions } from "@/features/moment/api/options"
 
 export const MediaTypeComponent = () => {
+	const { data: moments } = useSuspenseQuery(momentsQueryOptions())
 	const type = useParams({
 		from: "/$mediaType",
 		select: params => params.mediaType,
@@ -108,8 +110,8 @@ export const MediaTypeComponent = () => {
 			return
 		}
 
-		const originTop = (containerElement.children[prevIndex] as HTMLButtonElement).offsetTop
-		const newTop = (containerElement.children[index] as HTMLButtonElement).offsetTop
+		const originTop = (containerElement.querySelector(`[data-index="${prevIndex}"]`) as HTMLButtonElement).offsetTop
+		const newTop = (containerElement.querySelector(`[data-index="${index}"]`) as HTMLButtonElement).offsetTop
 
 		useFiles.setState({ prevIndex: index })
 
@@ -129,13 +131,20 @@ export const MediaTypeComponent = () => {
 	}
 
 	const defaultLabel = getMediaTypeDefautLabel(type)
+	const isImageOrVideo = ["image", "video"].includes(type)
 
 	return (
 		<>
 			<MediaGrid
 				ref={containerRef}
-				className="p-1 is-horizontal:p-[2.5vw] is-horizontal:pl-0"
+				className={cn(
+					"p-2 is-horizontal:p-[2.5vw] is-horizontal:pl-0",
+					{
+						"is-vertical:pb-17": isImageOrVideo,
+					}
+				)}
 				items={items}
+				moments={isImageOrVideo ? moments.items : undefined}
 				onItem={handleChange}
 				onOpen={handleOpen}
 				onClose={handleClose}
@@ -144,7 +153,7 @@ export const MediaTypeComponent = () => {
 				ref={ref}
 				className="h-screen mt-[-100vh] pointer-events-none"
 			/>
-			{["image", "video"].includes(type) && (
+			{isImageOrVideo && (
 				<div
 					className={cn(
 						"fixed bottom-20 is-vertical:inset-x-4 is-horizontal:bottom-[3.5vw] is-horizontal:right-[3.5vw] ",
